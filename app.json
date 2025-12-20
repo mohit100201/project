@@ -1,10 +1,10 @@
 {
   "expo": {
-    "name": "bolt-expo-nativewind",
-    "slug": "bolt-expo-nativewind",
+    "name": "pinepe",
+    "slug": "pinepe",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/generated/icon.png",
     "scheme": "myapp",
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
@@ -12,7 +12,7 @@
       "supportsTablet": true
     },
     "android": {
-      "package": "com.mohit100201.boltexponativewind"
+      "package": "com.pinepe.pinepe"
     },
     "web": {
       "bundler": "metro",
@@ -29,37 +29,37 @@
     },
     "extra": {
       "router": {},
-      "tenantUniqueId": "daccd57e-c327-43cf-9f90-db7d72325454",
+      "tenantUniqueId": "95c1fbeb-388c-44f4-88a9-dd4148f1df3c",
       "eas": {
-        "projectId": "3d149857-ae73-4ed1-a34d-12a0018a87c8"
+        "projectId": "b54319dc-24f4-4efa-88b2-8bf3e75a8559"
       },
       "tenantData": {
-        "id": 28,
-        "unique_id": "LAXMEPINP001",
-        "name": "Laxmeepay",
-        "email": "info@laxmeepay.com",
+        "id": 3,
+        "unique_id": "95c1fbeb-388c-44f4-88a9-dd4148f1df3c",
+        "name": "pinepe",
+        "email": "pinepeindia@gmail.com",
         "email_verified_at": {},
-        "phone": "7900926726",
+        "phone": "9119127633",
         "role": "whitelabel",
-        "plan_id": {},
+        "plan_id": 4,
         "parent_id": 1,
         "parent_type": "superadmin",
-        "domain": "laxmeepay.com",
-        "photo": "https://api.pinepe.in/storage/photos/R8ogDUtNhZVNRLRWGmfLhQmLVk0tMtopx57H4KBH.png",
+        "domain": "app.pinepe.in",
+        "photo": "https://api.pinepe.in/storage/photos/AJoVjuPXNDutobj5mHw5niJx199Sn7XVzrs7PDFo.png",
         "is_blocked": false,
         "is_suspended": false,
         "notes": {},
         "aadhar_front": {},
         "aadhar_back": {},
         "pan": {},
-        "state": "Rajasthan",
-        "city": "Jaipur",
-        "address": "hgfs",
-        "wallet_balance": "0.00",
-        "wallet_hold": "0.00",
+        "state": {},
+        "city": {},
+        "address": {},
+        "wallet_balance": "100.00",
+        "wallet_hold": "100.00",
         "wallet_status": "active",
-        "created_at": "2025-12-13T10:03:29.000000Z",
-        "updated_at": "2025-12-17T08:07:08.000000Z"
+        "created_at": "2025-10-28T10:36:33.000000Z",
+        "updated_at": "2025-12-19T09:35:58.000000Z"
       }
     }
   }

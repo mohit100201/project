@@ -8,7 +8,19 @@ const API_URL = 'https://api.pinepe.in/api/users?type=whitelabel&per_page=10&pag
 const TOKEN = '346|y1Jka32RNDwMg1gGkNGAhO1txb319kghZkkIqfiHf5049b46';
 const TENANT_ID = process.env.TENANT_ID;
 
-// --- 2. IMAGE DOWNLOADER & PROCESSOR ---
+// --- 2. CORRECTED METADATA LOGIC ---
+function updateAppConfig(tenantData) {
+  // This must match the path in your app.config.js
+  const metadataPath = path.join(__dirname, '../tenant-metadata.json');
+  
+  // We write the RAW tenant object. 
+  // Your app.config.js will handle mapping this to the app name/package.
+  fs.writeFileSync(metadataPath, JSON.stringify(tenantData, null, 2));
+  
+  console.log(`\x1b[32m%s\x1b[0m`, `[Config] ✅ tenant-metadata.json updated for: ${tenantData.name}`);
+}
+
+// --- 3. IMAGE PROCESSOR ---
 async function downloadIcon(url) {
   const brandingDir = path.join(__dirname, '../assets/generated');
   const iconPath = path.join(brandingDir, 'icon.png');
@@ -18,34 +30,30 @@ async function downloadIcon(url) {
   }
 
   try {
-    console.log(`[Tenant] 📥 Downloading photo: ${url}`);
-    const response = await axios({
-      url,
-      method: 'GET',
-      responseType: 'arraybuffer',
-    });
+    console.log(`[Image] 📥 Downloading logo: ${url}`);
+    const response = await axios({ url, method: 'GET', responseType: 'arraybuffer' });
 
     await sharp(Buffer.from(response.data))
       .resize(1024, 1024, {
         fit: 'contain',
-        background: { r: 255, g: 255, b: 255, alpha: 0 } // Transparent
+        background: { r: 255, g: 255, b: 255, alpha: 0 } // Transparent padding
       })
       .png()
       .toFile(iconPath);
 
-    console.log(`\x1b[32m[Tenant] ✅ Icon saved to: assets/generated/icon.png\x1b[0m`);
+    console.log(`\x1b[32m%s\x1b[0m`, `[Image] ✅ Icon processed and saved.`);
   } catch (error) {
-    console.error(`\x1b[31m[Tenant] ❌ Image Error: ${error.message}\x1b[0m`);
+    console.error(`\x1b[31m%s\x1b[0m`, `[Image] ❌ Failed to process icon: ${error.message}`);
   }
 }
 
-// --- 3. MAIN LOGIC ---
-async function fetchTenantData() {
-  console.log(`\x1b[36m[Tenant] 🚀 Searching for ID: ${TENANT_ID}\x1b[0m`);
+// --- 4. MAIN EXECUTION ---
+async function startSync() {
+  console.log(`\x1b[36m%s\x1b[0m`, `[Sync] 🚀 Fetching Tenant: ${TENANT_ID}`);
 
   if (!TENANT_ID) {
-    console.error("\x1b[31m[Tenant] ❌ Error: No TENANT_ID provided.\x1b[0m");
-    return;
+    console.error(`\x1b[31m%s\x1b[0m`, `[Sync] ❌ No TENANT_ID provided!`);
+    process.exit(1);
   }
 
   try {
@@ -56,36 +64,27 @@ async function fetchTenantData() {
       }
     });
 
-    // Match your specific API structure: response.data.data.items
     const tenants = response.data.data.items;
-
-    if (!Array.isArray(tenants)) {
-      console.error("\x1b[31m[Tenant] ❌ API Structure Error: Could not find 'items' array.\x1b[0m");
-      return;
-    }
-
-    // Find the tenant by unique_id or id
     const currentTenant = tenants.find(t => 
-      t.unique_id === TENANT_ID || 
-      t.id.toString() === TENANT_ID
+      t.unique_id === TENANT_ID || t.id.toString() === TENANT_ID
     );
 
     if (currentTenant) {
-      console.log(`[Tenant] ✨ Found Tenant: ${currentTenant.name}`);
+      // Step 1: Write to tenant-metadata.json
+      updateAppConfig(currentTenant);
       
-      // Use the 'photo' field from your JSON
+      // Step 2: Download the photo from API
       if (currentTenant.photo) {
         await downloadIcon(currentTenant.photo);
-      } else {
-        console.warn("\x1b[33m[Tenant] ⚠️ Tenant found, but 'photo' field is empty.\x1b[0m");
       }
+      
+      console.log(`\x1b[32m%s\x1b[0m`, `[Sync] ✨ Sync Complete.`);
     } else {
-      console.error(`\x1b[31m[Tenant] ❌ Tenant ID ${TENANT_ID} not found in current results.\x1b[0m`);
+      console.error(`\x1b[31m%s\x1b[0m`, `[Sync] ❌ Tenant ID ${TENANT_ID} not found.`);
     }
-
   } catch (error) {
-    console.error(`\x1b[31m[Tenant] ❌ API Error: ${error.message}\x1b[0m`);
+    console.error(`\x1b[31m%s\x1b[0m`, `[Sync] ❌ API Error: ${error.message}`);
   }
 }
 
-fetchTenantData();
+startSync();
