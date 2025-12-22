@@ -49,7 +49,7 @@ export default function HomeScreen() {
             </View>
             <Text style={styles.balanceLabel}>Total Balance</Text>
           </View>
-          <Text style={styles.balanceAmount}>${balance.toFixed(2)}</Text>
+          <Text style={styles.balanceAmount}>₹{balance.toFixed(2)}</Text>
 
           <View style={styles.actions}>
             <Pressable style={styles.actionButton}>
@@ -90,7 +90,7 @@ export default function HomeScreen() {
               <Text style={styles.serviceName} numberOfLines={1}>
                 {service.name}
               </Text>
-              <Text style={styles.servicePrice}>${service.price}</Text>
+              <Text style={styles.servicePrice}>₹{service.price}</Text>
             </AnimatedCard>
           ))}
         </View>
@@ -111,7 +111,7 @@ export default function HomeScreen() {
               <Text style={styles.transactionTitle}>Mobile Recharge</Text>
               <Text style={styles.transactionDate}>Today, 10:30 AM</Text>
             </View>
-            <Text style={styles.transactionAmount}>-$10.00</Text>
+            <Text style={styles.transactionAmount}>-₹10.00</Text>
           </AnimatedCard>
         ))}
       </View>

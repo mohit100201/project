@@ -107,7 +107,7 @@ export default function ServicesScreen() {
                         {service.description}
                       </Text>
                       <View style={styles.serviceFooter}>
-                        <Text style={styles.servicePrice}>${service.price.toFixed(2)}</Text>
+                        <Text style={styles.servicePrice}>₹{service.price.toFixed(2)}</Text>
                         <AnimatedButton
                           title="Buy Now"
                           onPress={() => handleBuyService(service)}

@@ -90,7 +90,6 @@ export default function OTPScreen() {
         headers: {
           'Accept': 'application/json',
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`, 
         },
         body: JSON.stringify({
           type: "login",

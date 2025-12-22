@@ -191,7 +191,7 @@ export default function TransactionsScreen() {
                   styles.transactionAmount,
                   { color: transaction.type === 'purchase' ? theme.colors.error[500] : theme.colors.success[500] }
                 ]}>
-                  {transaction.type === 'purchase' ? '-' : '+'}${transaction.amount.toFixed(2)}
+                  {transaction.type === 'purchase' ? '-' : '+'}₹{transaction.amount.toFixed(2)}
                 </Text>
                 <View style={[styles.statusBadge, { backgroundColor: `${getStatusColor(transaction.status)}20` }]}>
                   <Text style={[styles.statusText, { color: getStatusColor(transaction.status) }]}>
