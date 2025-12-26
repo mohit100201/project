@@ -12,12 +12,13 @@ import { Search } from "lucide-react-native";
 import Constants from "expo-constants";
 import * as SecureStore from "expo-secure-store";
 import Toast from "react-native-toast-message";
+import { useRouter } from "expo-router";
 
 import { theme } from "@/theme";
 import { AnimatedCard } from "@/components/animated/AnimatedCard";
-import { AnimatedButton } from "@/components/animated/AnimatedButton";
 import { getLatLong } from "@/utils/location";
 import { getServicesApi } from "../api/service.api";
+import { ServiceCardSkeleton } from "@/components/shimmer/ServiceCardSkeleton";
 
 type ServiceItem = {
   id: number;
@@ -36,15 +37,16 @@ export default function ServicesScreen() {
   const [services, setServices] = useState<ServiceItem[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const router = useRouter();
+
   const tenantData = Constants.expoConfig?.extra?.tenantData;
   const domainName = tenantData?.domain || "laxmeepay.com";
 
   /* ===========================
-     FETCH SERVICES
+      FETCH SERVICES
   ============================ */
   const handleFetchServices = async () => {
     setLoading(true);
-
     try {
       const location = await getLatLong();
       if (!location) {
@@ -53,6 +55,7 @@ export default function ServicesScreen() {
           text1: "Location Required",
           text2: "Please enable location permission",
         });
+        setLoading(false);
         return;
       }
 
@@ -67,7 +70,7 @@ export default function ServicesScreen() {
         perPage: 50,
       });
 
-      setServices(json.data.items);
+      setServices(json.data.items || []);
     } catch (err: any) {
       Toast.show({
         type: "error",
@@ -84,44 +87,48 @@ export default function ServicesScreen() {
   }, []);
 
   /* ===========================
-     GROUP + SORT (A → Z)
+      GROUP + SORT (A → Z)
   ============================ */
   const groupedServices = useMemo(() => {
     const map: Record<string, ServiceItem[]> = {};
 
-    services.forEach(service => {
+    services.forEach((service) => {
       const category = service.category || "Others";
       if (!map[category]) map[category] = [];
       map[category].push(service);
     });
 
-    Object.keys(map).forEach(category => {
-      map[category].sort((a, b) =>
-        a.name.localeCompare(b.name)
-      );
+    Object.keys(map).forEach((category) => {
+      map[category].sort((a, b) => a.name.localeCompare(b.name));
     });
 
     return Object.keys(map)
       .sort((a, b) => a.localeCompare(b))
-      .map(category => ({
+      .map((category) => ({
         category,
         items: map[category],
       }));
   }, [services]);
 
   /* ===========================
-     SERVICE ACTION
+      CARD CLICK HANDLER
   ============================ */
   const handleServicePress = (service: ServiceItem) => {
     if (service.url.startsWith("/")) {
-      console.log("Navigate internal:", service.url);
-    } else {
-      Linking.openURL(service.url);
+      router.push(service.url as any);
+      return;
     }
+
+    if (service.url.startsWith("http")) {
+      Linking.openURL(service.url);
+      return;
+    }
+
+    router.push(`/services/${service.slug}` as any);
   };
 
   /* ===========================
-     UI
+      UI
   ============================ */
   return (
     <View style={styles.container}>
@@ -138,57 +145,58 @@ export default function ServicesScreen() {
         style={styles.content}
         showsVerticalScrollIndicator={false}
       >
-        {groupedServices.map(({ category, items }) => (
-          <View key={category} style={styles.categorySection}>
-            <Text style={styles.categoryTitle}>
-              {category.toUpperCase()}
-            </Text>
-
-            <View style={styles.servicesGrid}>
-              {items.map((service, index) => (
-                <AnimatedCard
-                  key={service.id}
-                  style={styles.serviceCard}
-                  delay={index * 60}
-                >
-                  {/* ICON */}
-                  <View style={styles.iconWrapper}>
-                    <Image
-                      source={{ uri: service.image }}
-                      style={styles.serviceImage}
-                      resizeMode="contain"
-                    />
-                  </View>
-
-                  {/* INFO */}
-                  <View style={styles.serviceInfo}>
-                    <Text style={styles.serviceName} numberOfLines={2}>
-                      {service.name}
-                    </Text>
-
-                    <Text style={styles.serviceCategory}>
-                      {service.category}
-                    </Text>
-
-                    <View style={styles.footerRow}>
-                      <Text style={styles.amountText}>
-                        ₹{service.amount ?? "0"}
-                      </Text>
-
-                      <AnimatedButton
-                        title="Purchase Now"
-                        onPress={() => handleServicePress(service)}
-                        variant="primary"
-                        size="small"
-                        loading={loading}
-                      />
-                    </View>
-                  </View>
-                </AnimatedCard>
-              ))}
-            </View>
+        {loading ? (
+          <View style={{ marginTop: 10 }}>
+            <ServiceCardSkeleton />
+            <ServiceCardSkeleton />
+            <ServiceCardSkeleton />
           </View>
-        ))}
+        ) : (
+          groupedServices.map(({ category, items }) => (
+            <View key={category} style={styles.categorySection}>
+              <Text style={styles.categoryTitle}>
+                {category.toUpperCase()}
+              </Text>
+
+              <View style={styles.servicesGrid}>
+                {items.map((service, index) => (
+                  <Pressable
+                    key={service.id}
+                    onPress={() => handleServicePress(service)}
+                    style={({ pressed }) => [
+                      styles.pressable,
+                      pressed && { opacity: 0.85 },
+                    ]}
+                  >
+                    <AnimatedCard
+                      style={styles.serviceCard}
+                      delay={index * 60}
+                    >
+                      {/* Left side: Service Image */}
+                      <View style={styles.iconWrapper}>
+                        <Image 
+                           source={{ uri: service.image }} 
+                           style={styles.serviceImage}
+                           resizeMode="contain"
+                        />
+                      </View>
+
+                      {/* Right side: Info (Title & Category) */}
+                      <View style={styles.serviceInfo}>
+                        <Text style={styles.serviceName} numberOfLines={1}>
+                          {service.name}
+                        </Text>
+                        <Text style={styles.serviceCategory}>
+                          {service.category}
+                        </Text>
+                      </View>
+                    </AnimatedCard>
+                  </Pressable>
+                ))}
+              </View>
+            </View>
+          ))
+        )}
 
         <View style={{ height: 100 }} />
       </ScrollView>
@@ -197,7 +205,7 @@ export default function ServicesScreen() {
 }
 
 /* ===========================
-   STYLES
+    STYLES
 =========================== */
 const styles = StyleSheet.create({
   container: {
@@ -224,7 +232,6 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.light,
     justifyContent: "center",
     alignItems: "center",
-    ...theme.shadows.sm,
   },
   content: {
     flex: 1,
@@ -239,6 +246,7 @@ const styles = StyleSheet.create({
     color: theme.colors.primary[500],
     marginBottom: theme.spacing[3],
     letterSpacing: 1.2,
+    marginLeft: 4,
   },
   servicesGrid: {
     gap: theme.spacing[4],
@@ -249,7 +257,8 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.xl,
     backgroundColor: theme.colors.background.light,
     paddingVertical: theme.spacing[3],
-    ...theme.shadows.md,
+    borderWidth: 1,
+    borderColor: `${theme.colors.primary[500]}10`,
   },
   iconWrapper: {
     width: 80,
@@ -259,15 +268,16 @@ const styles = StyleSheet.create({
     backgroundColor: theme.colors.background.dark,
     justifyContent: "center",
     alignItems: "center",
+    overflow: 'hidden', // Ensures image stays within rounded corners
   },
   serviceImage: {
-    width: 55,
+    width: 55, // Size matches the skeleton perfectly
     height: 55,
   },
   serviceInfo: {
     flex: 1,
     paddingHorizontal: theme.spacing[4],
-    gap: theme.spacing[1],
+    gap: 4,
   },
   serviceName: {
     fontSize: theme.typography.fontSizes.md,
@@ -278,15 +288,7 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSizes.xs,
     color: theme.colors.text.secondary,
   },
-  footerRow: {
-    flexDirection: "row",
-    justifyContent: "space-between",
-    alignItems: "center",
-    marginTop: theme.spacing[2],
-  },
-  amountText: {
-    fontSize: theme.typography.fontSizes.lg,
-    fontWeight: theme.typography.fontWeights.bold,
-    color: theme.colors.primary[500],
+  pressable: {
+    borderRadius: theme.borderRadius.xl,
   },
 });

@@ -28,6 +28,7 @@ import { SafeAreaView } from "react-native-safe-area-context";
 import { TransactionDetailsModal } from "@/components/ui/TransactionDetailModal";
 import { TransactionFilterModal } from "@/components/ui/TransactionFilterModal";
 import { useBottomTabBarHeight } from "@react-navigation/bottom-tabs";
+import { TransactionSkeleton } from "@/components/shimmer/TransactionSkeleton";
 
 
 type FilterType = "All" | "Success" | "Pending" | "Failed";
@@ -278,9 +279,7 @@ export default function TransactionsScreen() {
 
       <View style={{ flex: 1, marginTop: 10 }}>
         {loading && page === 1 ? (
-          <View style={styles.center}>
-            <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-          </View>
+          <TransactionSkeleton />
         ) : (
           <FlatList
             data={transactions}
