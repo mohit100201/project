@@ -72,6 +72,7 @@ export default function ServicesScreen() {
       }
 
       const token = await SecureStore.getItemAsync("userToken");
+      console.log("==token==",token)
 
       const json = await getServicesApi({
         domain: domainName,
@@ -81,8 +82,9 @@ export default function ServicesScreen() {
         status: "active",
         perPage: 50,
       });
-
+      console.log("==service==",json)
       setServices(json.data.items || []);
+      
     } catch (err: any) {
       Toast.show({
         type: "error",
@@ -126,18 +128,23 @@ export default function ServicesScreen() {
       CARD CLICK HANDLER
   ============================ */
   const handleServicePress = (service: ServiceItem) => {
-    if (service.url.startsWith("/")) {
-      router.push(service.url as any);
-      return;
-    }
+  const url = service.url?.trim();
 
-    if (service.url.startsWith("http")) {
-      Linking.openURL(service.url);
-      return;
-    }
+  // External URL
+  if (url && url.startsWith("http")) {
+    Linking.openURL(url);
+    return;
+  }
 
-    router.push(`/services/${service.slug}` as any);
-  };
+  // Internal app route (/aeps, /dmt, etc.)
+  if (url && url.startsWith("/")) {
+    router.push(url as any);
+    return;
+  }
+
+  
+};
+
 
   /* ===========================
       UI
@@ -303,35 +310,35 @@ const styles = StyleSheet.create({
     borderRadius: theme.borderRadius.xl,
   },
   emptyState: {
-  flex: 1,
-  marginTop: 80,
-  alignItems: "center",
-  justifyContent: "center",
-  paddingHorizontal: 24,
+    flex: 1,
+    marginTop: 80,
+    alignItems: "center",
+    justifyContent: "center",
+    paddingHorizontal: 24,
 
-},
+  },
 
-emptyIconWrapper: {
-  width: 72,
-  height: 72,
-  borderRadius: 36,
-  backgroundColor: theme.colors.background.light,
-  justifyContent: "center",
-  alignItems: "center",
-  marginBottom: 16,
-},
+  emptyIconWrapper: {
+    width: 72,
+    height: 72,
+    borderRadius: 36,
+    backgroundColor: theme.colors.background.light,
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 16,
+  },
 
-emptyTitle: {
-  fontSize: theme.typography.fontSizes.lg,
-  fontWeight: "700",
-  color: theme.colors.text.primary,
-  marginBottom: 6,
-},
+  emptyTitle: {
+    fontSize: theme.typography.fontSizes.lg,
+    fontWeight: "700",
+    color: theme.colors.text.primary,
+    marginBottom: 6,
+  },
 
-emptySubtitle: {
-  fontSize: theme.typography.fontSizes.sm,
-  color: theme.colors.text.secondary,
-  textAlign: "center",
-},
+  emptySubtitle: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.text.secondary,
+    textAlign: "center",
+  },
 
 });

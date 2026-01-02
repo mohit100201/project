@@ -1,4 +1,4 @@
-package `in`.pinepe.pinepe
+package `in`.pinepe.laxmeepay
 
 import android.app.Application
 import android.content.res.Configuration
