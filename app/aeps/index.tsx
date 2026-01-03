@@ -1,11 +1,11 @@
 import React, { useEffect, useState } from "react";
-import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity } from "react-native";
+import { View, Text, StyleSheet, ActivityIndicator, TouchableOpacity, ScrollView } from "react-native";
 import { Picker } from "@react-native-picker/picker";
 import { theme } from "@/theme";
 import OnboardingForm from "./OnboardingForm";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
-import { Hourglass, ShieldCheck, ChevronRight } from "lucide-react-native";
+import { Hourglass, ShieldCheck, ChevronRight, Building2 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { getLatLong } from "@/utils/location";
 import { getBankItKycStatusApi, Pipe } from "../api/service.api"; // Ensure Pipe is exported from your service
@@ -84,12 +84,19 @@ export default function AepsScreen() {
         },
       });
 
-      console.log("==resToken==",res)
+      console.log("==resToken==", res)
 
       if (res.success && res.data.loginUrl) {
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        const targetUrl = res.data.loginUrl;
+
         router.push({
-          pathname: "/aeps/WebView", // Matches your case-sensitive filename
-          params: { url: res.data.loginUrl },
+          pathname: "/aeps/WebView",
+          params: {
+            url: targetUrl,
+            pipe: selectedPipe // Pass the bank name here for the header
+          },
         });
       } else {
         Toast.show({ type: "error", text1: res.message || "Token generation failed" });
@@ -113,59 +120,104 @@ export default function AepsScreen() {
   // 1. Approved State: Show Select Pipe Card
   if (kycStatus === "Approved") {
     return (
-      <View style={styles.container}>
-        <View style={styles.approvedCard}>
-          <View style={styles.iconCircleApproved}>
-            <ShieldCheck size={40} color={theme.colors.primary[500]} />
-          </View>
-          <Text style={styles.statusTitle}>Select Pipe</Text>
-          <Text style={styles.statusDescription}>Select your preferred gateway pipe to initiate AEPS transactions.</Text>
-
-          <View style={styles.inputGroup}>
-            <Text style={styles.fieldLabel}>Pipe Type</Text>
-            <View style={styles.pickerContainer}>
-              <Picker
-                selectedValue={selectedPipe}
-                onValueChange={(val) => setSelectedPipe(val)}
-                dropdownIconColor="#FFF"
-                mode="dropdown" // Explicitly set dropdown mode
-                style={{ color: "#FFF", backgroundColor: "transparent" }} // Label color when closed
-              >
-                <Picker.Item
-                  label="Select Pipe Type"
-                  value=""
-                  color="#94A3B8"
-                />
-                {pipes.map((pipe, index) => (
-                  <Picker.Item
-                    key={index}
-                    label={`${pipe.value} ${!pipe.is_active ? "(Inactive)" : ""}`}
-                    value={pipe.value}
-                    enabled={pipe.is_active}
-                    // Force color to black/dark for the dropdown list visibility
-                    color={pipe.is_active ? "#000000" : "#A0AEC0"}
-                  />
-                ))}
-              </Picker>
+      <View style={{ flex: 1, backgroundColor: "#FFFFFF" }}>
+        <ScrollView
+          contentContainerStyle={{ paddingBottom: 40, paddingHorizontal: 20 }}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={{ alignItems: 'center', marginTop: 40 }}>
+            {/* Top Icon Section */}
+            <View style={{
+              width: 80,
+              height: 80,
+              borderRadius: 40,
+              backgroundColor: theme.colors.primary[50], // Very light hint of color
+              justifyContent: 'center',
+              alignItems: 'center',
+              marginBottom: 20
+            }}>
+              <ShieldCheck size={40} color={theme.colors.primary[500]} />
             </View>
-          </View>
 
-          <TouchableOpacity
-            style={[styles.submitBtn, submitting && { opacity: 0.6 }]}
-            onPress={handlePostToken}
-            disabled={submitting}
-          >
-            {submitting ? (
-              <ActivityIndicator color="#FFF" />
-            ) : (
-              <View style={styles.btnContent}>
-                <Text style={styles.submitBtnText}>Submit</Text>
-                <ChevronRight size={20} color="#FFF" />
-              </View>
-            )}
-          </TouchableOpacity>
-        </View>
-        <Text style={styles.agentCodeText}>Agent Code: {agentCode}</Text>
+            <Text style={styles.statusTitle}>Select Gateway Pipe</Text>
+            <Text style={styles.statusDescription}>
+              Choose an active gateway provider to proceed.
+            </Text>
+
+            {/* GRID OF PIPE CARDS - COMPLETELY FLAT */}
+            <View style={styles.pipeGrid}>
+              {pipes.map((pipe, index) => {
+                const isActive = pipe.is_active;
+                const isSelected = selectedPipe === pipe.value;
+
+                return (
+                  <TouchableOpacity
+                    key={index}
+                    disabled={!isActive || submitting}
+                    onPress={() => setSelectedPipe(pipe.value)}
+                    style={[
+                      styles.pipeCard,
+                      isSelected && { borderColor: theme.colors.primary[500], borderWidth: 2 },
+                      !isActive && { opacity: 0.4 }
+                    ]}
+                  >
+                    {!isActive && (
+                      <View style={styles.comingSoonBadge}>
+                        <Text style={styles.comingSoonText}>SOON</Text>
+                      </View>
+                    )}
+
+                    <Building2
+                      size={28}
+                      color={!isActive ? "#94A3B8" : isSelected ? theme.colors.primary[500] : "#475569"}
+                    />
+
+                    <Text style={[
+                      styles.pipeLabel,
+                      isSelected && { color: theme.colors.primary[500], fontWeight: '800' }
+                    ]}>
+                      {pipe.value}
+                    </Text>
+
+                    {/* Minimal Radio indicator */}
+                    <View style={[
+                      styles.radioOuter,
+                      isSelected && { borderColor: theme.colors.primary[500] }
+                    ]}>
+                      {isSelected && <View style={{
+                        height: 8,
+                        width: 8,
+                        borderRadius: 4,
+                        backgroundColor: theme.colors.primary[500]
+                      }} />}
+                    </View>
+                  </TouchableOpacity>
+                );
+              })}
+            </View>
+
+            {/* Action Button */}
+            <TouchableOpacity
+              style={[
+                styles.submitBtn,
+                (submitting || !selectedPipe) && { opacity: 0.6, backgroundColor: "#CBD5E1" }
+              ]}
+              onPress={handlePostToken}
+              disabled={submitting || !selectedPipe}
+            >
+              {submitting ? (
+                <ActivityIndicator color="#FFF" />
+              ) : (
+                <View style={styles.btnContent}>
+                  <Text style={styles.submitBtnText}>Continue Transaction</Text>
+                  <ChevronRight size={20} color="#FFF" />
+                </View>
+              )}
+            </TouchableOpacity>
+
+            <Text style={styles.agentCodeText}>Agent Code: {agentCode}</Text>
+          </View>
+        </ScrollView>
       </View>
     );
   }
@@ -216,15 +268,116 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     height: 55, // Ensure consistent height
   },
-  submitBtn: { width: "100%", backgroundColor: theme.colors.primary[500], paddingVertical: 16, borderRadius: 12, alignItems: "center" },
-  btnContent: { flexDirection: "row", alignItems: "center" },
-  submitBtnText: { color: "#FFF", fontWeight: "700", fontSize: 16, marginRight: 8 },
+
   statusCard: { width: "100%", backgroundColor: "#585a5eff", borderRadius: 24, padding: 32, alignItems: "center" },
   iconCircle: { width: 100, height: 100, borderRadius: 50, backgroundColor: "rgba(79, 70, 229, 0.1)", justifyContent: "center", alignItems: "center", marginBottom: 24 },
-  statusTitle: { fontSize: 22, fontWeight: "800", color: "#FFFFFF", marginBottom: 12 },
-  statusDescription: { fontSize: 14, color: "#94A3B8", textAlign: "center", lineHeight: 22 },
   statusBadge: { marginTop: 30, paddingVertical: 8, paddingHorizontal: 16, backgroundColor: "rgba(245, 158, 11, 0.1)", borderRadius: 100, flexDirection: "row", alignItems: "center" },
   statusDot: { width: 8, height: 8, borderRadius: 4, backgroundColor: "#F59E0B", marginRight: 8 },
   statusBadgeText: { color: "#F59E0B", fontSize: 12, fontWeight: "700" },
-  agentCodeText: { marginTop: 20, color: "#475569", fontSize: 12 },
+
+
+  disabledText: {
+    color: '#94A3B8',
+  },
+  selectedText: {
+    color: theme.colors.primary[700],
+  },
+
+  radioOuterSelected: {
+    borderColor: theme.colors.primary[500],
+  },
+  radioInner: {
+    height: 10,
+    width: 10,
+    borderRadius: 5,
+    backgroundColor: theme.colors.primary[500],
+  },
+  pipeCard: {
+    width: '48%',
+    backgroundColor: '#FFFFFF', // Force white
+    borderRadius: 12,
+    padding: 20,
+    marginBottom: 16,
+    borderWidth: 1,
+    borderColor: '#E2E8F0', // Very light grey border
+    alignItems: 'center',
+    position: 'relative',
+    // No shadow to avoid dark outlines
+  },
+  comingSoonBadge: {
+    position: 'absolute',
+    top: 10,
+    right: 10,
+    backgroundColor: '#F8FAFC',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+    borderWidth: 1,
+    borderColor: '#E2E8F0',
+  },
+  comingSoonText: {
+    color: '#94A3B8',
+    fontSize: 8,
+    fontWeight: '800',
+  },
+  pipeLabel: {
+    fontSize: 14,
+    fontWeight: '600',
+    color: '#334155',
+    marginTop: 12,
+    marginBottom: 10,
+  },
+  radioOuter: {
+    height: 16,
+    width: 16,
+    borderRadius: 8,
+    borderWidth: 1.5,
+    borderColor: '#CBD5E1',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  statusTitle: {
+    fontSize: 22,
+    fontWeight: '800',
+    color: '#1E293B',
+    marginBottom: 8,
+  },
+  statusDescription: {
+    fontSize: 14,
+    color: '#64748B',
+    textAlign: 'center',
+    lineHeight: 20,
+  },
+  submitBtn: {
+    width: '100%',
+    backgroundColor: theme.colors.primary[500],
+    height: 55,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  submitBtnText: {
+    color: '#FFF',
+    fontSize: 16,
+    fontWeight: '700',
+    marginRight: 8,
+  },
+  btnContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  agentCodeText: {
+    marginTop: 25,
+    color: '#94A3B8',
+    fontSize: 13,
+    fontWeight: '500',
+  },
+  pipeGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginTop: 20,
+    width: '100%',
+  },
 });

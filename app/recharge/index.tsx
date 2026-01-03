@@ -12,6 +12,8 @@ import {
     Modal,
     FlatList,
     Pressable,
+    Keyboard,
+
 } from "react-native";
 import Animated, {
     FadeIn,
@@ -32,7 +34,8 @@ import Constants from "expo-constants";
 // Internal Imports
 import { operators } from "@/utils/operators";
 import { getLatLong } from "@/utils/location";
-import { checkMobilePlansApi, checkOperatorApi, checkROffersApi } from "../api/recharge.api";
+import { checkMobilePlansApi, checkOperatorApi, checkROffersApi, rechargeRequestApi } from "../api/recharge.api";
+import { confirmMpinApi } from "../api/mpin.api";
 
 /* ---------------- ANIMATED MODAL COMPONENT ---------------- */
 const CustomModal = ({ visible, onClose, title, subtitle, children, height = '70%' }: any) => {
@@ -88,6 +91,11 @@ export default function RechargeScreen() {
     const [plansData, setPlansData] = useState<any>(null); // Stores RDATA
     const [categories, setCategories] = useState<string[]>([]);
     const [selectedCategory, setSelectedCategory] = useState<string>("");
+    const [mpinModalVisible, setMpinModalVisible] = useState(false);
+    const [mpin, setMpin] = useState("");
+    const [verifyingMpin, setVerifyingMpin] = useState(false);
+    const [selectedPlan, setSelectedPlan] = useState<any>(null);
+
 
     const isDTH = operator && operator.value >= 7 && operator.value <= 12;
 
@@ -102,6 +110,9 @@ export default function RechargeScreen() {
             fetchOperatorDetails(mobile);
         } else if (mobile.length < 10) {
             setCircle("");
+              setSelectedPlan(null);
+  setAmount("");
+  setOperator("")
         }
     }, [mobile]);
 
@@ -140,45 +151,43 @@ export default function RechargeScreen() {
         }
     };
 
-  const handleCheckOffers = async () => {
-  try {
-    setFetchingOffers(true);
+    const handleCheckOffers = async () => {
+        try {
+            setFetchingOffers(true);
 
-    const location = await getLatLong();
-    const token = await SecureStore.getItemAsync("userToken");
-    const domainName =
-      Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+            const location = await getLatLong();
+            const token = await SecureStore.getItemAsync("userToken");
+            const domainName =
+                Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
 
-    const res = await checkROffersApi({
-      mobile,
-      operator_code: operator?.value,
-      domain: domainName,
-      latitude: location?.latitude?.toString() || "0.0",
-      longitude: location?.longitude?.toString() || "0.0",
-      token: token || "",
-    });
-
-   
-    const offers = res?.data?.data?.RDATA;
-
-    if (res.success && Array.isArray(offers) && offers.length > 0) {
-      setOffersList(offers);
-      setOfferModalVisible(true);
-    } else {
-      Toast.show({
-        type: "info",
-        text1: "No Special Offers",
-        text2: res?.data?.data?.MESSAGE || "Check regular plans instead."
-      });
-    }
-  } catch (err) {
-    Toast.show({ type: "error", text1: "Could not fetch offers" });
-  } finally {
-    setFetchingOffers(false);
-  }
-};
+            const res = await checkROffersApi({
+                mobile,
+                operator_code: operator?.value,
+                domain: domainName,
+                latitude: location?.latitude?.toString() || "0.0",
+                longitude: location?.longitude?.toString() || "0.0",
+                token: token || "",
+            });
 
 
+            const offers = res?.data?.data?.RDATA;
+
+            if (res.success && Array.isArray(offers) && offers.length > 0) {
+                setOffersList(offers);
+                setOfferModalVisible(true);
+            } else {
+                Toast.show({
+                    type: "info",
+                    text1: "No Special Offers",
+                    text2: res?.data?.data?.MESSAGE || "Check regular plans instead."
+                });
+            }
+        } catch (err) {
+            Toast.show({ type: "error", text1: "Could not fetch offers" });
+        } finally {
+            setFetchingOffers(false);
+        }
+    };
 
 
     const handleFetchPlans = async () => {
@@ -202,11 +211,11 @@ export default function RechargeScreen() {
                 token: token || "",
             });
 
-           
+
 
             if (res.success) {
                 const planObj = res.data.data.RDATA;
-               
+
 
                 const keys = Object.keys(planObj).filter(
                     key => Array.isArray(planObj[key]) && planObj[key].length > 0
@@ -230,6 +239,88 @@ export default function RechargeScreen() {
             Toast.show({ type: "error", text1: "Failed to load plans" });
         } finally {
             setFetchingPlans(false);
+        }
+    };
+
+    const handleMpinSubmit = async () => {
+        if (mpin.length < 4) {
+            Toast.show({ type: "error", text1: "Please enter a valid MPIN" });
+            return;
+        }
+
+        try {
+            setVerifyingMpin(true);
+            const location = await getLatLong();
+            const token = await SecureStore.getItemAsync("userToken");
+            const domainName = Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+
+            const res = await confirmMpinApi({
+                domain: domainName,
+                latitude: location?.latitude?.toString() || "0",
+                longitude: location?.longitude?.toString() || "0",
+                token: token || "",
+                mpin: mpin,
+            });
+
+            if (res.success) {
+                // 1. Close the modal first
+                setMpinModalVisible(false);
+                setMpin("");
+
+                // 2. TRIGGER THE RECHARGE API
+                await executeRechargeRequest();
+            } else {
+                setMpin(""); // Clear MPIN on failure
+                Toast.show({ type: "error", text1: res.message || "Invalid MPIN" });
+            }
+        } catch (error) {
+            Toast.show({ type: "error", text1: "Verification failed" });
+        } finally {
+            setVerifyingMpin(false);
+        }
+    };
+
+    // New function to handle the actual recharge API call
+    const executeRechargeRequest = async () => {
+        try {
+            setLoading(true);
+            const location = await getLatLong();
+            const token = await SecureStore.getItemAsync("userToken");
+            const domainName = Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+
+            const res = await rechargeRequestApi({
+                domain: domainName,
+                latitude: location?.latitude?.toString() || "0.0",
+                longitude: location?.longitude?.toString() || "0.0",
+                token: token || "",
+                mobile: mobile,
+                amount: amount,
+                operator_code: operator?.value,
+            });
+
+            if (res.success) {
+                Toast.show({
+                    type: "success",
+                    text1: "Recharge Successful",
+                    text2: res.message || `₹${amount} paid for ${mobile}`
+                });
+                // Clear the form after success
+                setMobile("");
+                setAmount("");
+                setOperator(null);
+                setCircle("");
+            } else {
+                Toast.show({
+                    type: "error",
+                    text1: "Recharge Failed",
+                    text2: res.message || "Something went wrong"
+                });
+            }
+        } catch (error) {
+            console.error("Recharge Error:", error);
+            Toast.show({ type: "error", text1: "Transaction failed", text2: "Please try again later" });
+        } finally {
+            setLoading(false);
         }
     };
 
@@ -296,6 +387,30 @@ export default function RechargeScreen() {
                             </TouchableOpacity>
                         </View>
 
+                        {/* SELECTED PLAN SUMMARY */}
+{selectedPlan && (
+  <View style={styles.selectedPlanCard}>
+    <View style={styles.selectedPlanHeader}>
+      <Text style={styles.selectedPlanPrice}>₹{selectedPlan.rs}</Text>
+      <View style={styles.validityBadge}>
+        <Clock size={12} color={theme.colors.primary[600]} />
+        <Text style={styles.validityText}>{selectedPlan.validity}</Text>
+      </View>
+    </View>
+
+    <Text style={styles.selectedPlanDesc} numberOfLines={3}>
+      {selectedPlan.desc}
+    </Text>
+
+    <TouchableOpacity
+      onPress={() => setPlanModalVisible(true)}
+      style={styles.changePlanBtn}
+    >
+      <Text style={styles.changePlanText}>Change Plan</Text>
+    </TouchableOpacity>
+  </View>
+)}
+
 
                         {/* INPUT: Amount */}
                         <View style={styles.inputGroup}>
@@ -336,9 +451,9 @@ export default function RechargeScreen() {
 
                         {/* SUBMIT BUTTON */}
                         <TouchableOpacity
-                            style={[styles.btn, (loading || !amount) && { opacity: 0.7 }]}
-                            onPress={() => { }}
-                            disabled={loading}
+                            style={[styles.btn, (loading || !amount || !mobile) && { opacity: 0.7 }]}
+                            onPress={() => setMpinModalVisible(true)} // Open MPIN modal first
+                            disabled={loading || !amount || mobile.length < 10}
                         >
                             <View style={styles.btnLeft}>
                                 <Zap size={18} color="#FFF" fill="#FFF" />
@@ -386,7 +501,15 @@ export default function RechargeScreen() {
                     renderItem={({ item }) => (
                         <TouchableOpacity
                             style={styles.offerCard}
-                            onPress={() => { setAmount(item.price); setOfferModalVisible(false); }}
+                            onPress={() => {
+                                setAmount(item.price);
+                                setSelectedPlan({
+                                    rs: item.price,
+                                    validity: `${item.validity} Days`,
+                                    desc: item.ofrtext.replace('|', ''),
+                                });
+                                setOfferModalVisible(false);
+                            }}
                         >
                             <View style={styles.offerCardHeader}>
                                 <View style={styles.priceContainer}>
@@ -446,6 +569,7 @@ export default function RechargeScreen() {
                             style={styles.planCard}
                             onPress={() => {
                                 setAmount(item.rs.toString());
+                                setSelectedPlan(item); // ✅ SAVE PLAN
                                 setPlanModalVisible(false);
                             }}
                         >
@@ -468,6 +592,70 @@ export default function RechargeScreen() {
                     ListEmptyComponent={<Text style={styles.emptyText}>No plans in this category</Text>}
                 />
             </CustomModal>
+
+            {/* MODAL: MPIN CONFIRMATION */}
+            <CustomModal
+                visible={mpinModalVisible}
+                onClose={() => {
+                    Keyboard.dismiss();
+                    setMpinModalVisible(false);
+                    setMpin("");
+                }}
+                title="Enter MPIN"
+                subtitle="Confirm your security code to proceed"
+            >
+                <KeyboardAvoidingView
+                    behavior={Platform.OS === "ios" ? "padding" : "padding"} // Changed to padding for consistency
+                    keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
+                    style={{ flex: 1 }}
+                >
+                    <ScrollView
+                        keyboardShouldPersistTaps="handled"
+                        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} // Added flexGrow: 1
+                        showsVerticalScrollIndicator={false}
+                    >
+                        <View style={{ marginTop: 20 }}>
+                            {/* MPIN INPUT */}
+                            <View style={styles.inputWrapper}>
+                                <Zap size={20} color={theme.colors.primary[500]} />
+                                <TextInput
+                                    style={styles.input}
+                                    placeholder="Enter 4-digit MPIN"
+                                    placeholderTextColor="#94A3B8"
+                                    keyboardType="numeric"
+                                    secureTextEntry
+                                    maxLength={4}
+                                    value={mpin}
+                                    onChangeText={setMpin}
+                                    autoFocus
+                                    returnKeyType="done"
+                                    onSubmitEditing={handleMpinSubmit} // Submit on keyboard 'Done'
+                                />
+                            </View>
+
+                            {/* CONFIRM BUTTON */}
+                            <TouchableOpacity
+                                style={[styles.btn, { marginTop: 30 }]}
+                                onPress={handleMpinSubmit}
+                                disabled={verifyingMpin}
+                            >
+                                <View style={styles.btnLeft}>
+                                    {verifyingMpin ? (
+                                        <ActivityIndicator color="#FFF" />
+                                    ) : (
+                                        <>
+                                            <CheckCircle2 size={18} color="#FFF" />
+                                            <Text style={styles.btnText}>Confirm & Pay</Text>
+                                        </>
+                                    )}
+                                </View>
+                            </TouchableOpacity>
+                        </View>
+                    </ScrollView>
+                </KeyboardAvoidingView>
+            </CustomModal>
+
+
         </SafeAreaView>
     );
 }
@@ -641,5 +829,45 @@ const styles = StyleSheet.create({
         fontWeight: '500',
         textAlign: 'center',
         letterSpacing: 0.3,
-    }
+    },
+
+    selectedPlanCard: {
+  backgroundColor: '#F8FAFC',
+  borderRadius: 16,
+  padding: 14,
+  marginBottom: 16,
+  borderWidth: 1,
+  borderColor: '#E2E8F0',
+},
+
+selectedPlanHeader: {
+  flexDirection: 'row',
+  justifyContent: 'space-between',
+  alignItems: 'center',
+  marginBottom: 6,
+},
+
+selectedPlanPrice: {
+  fontSize: 20,
+  fontWeight: '900',
+  color: '#1E293B',
+},
+
+selectedPlanDesc: {
+  fontSize: 13,
+  color: '#475569',
+  lineHeight: 18,
+  marginBottom: 8,
+},
+
+changePlanBtn: {
+  alignSelf: 'flex-end',
+},
+
+changePlanText: {
+  color: theme.colors.primary[600],
+  fontWeight: '800',
+  fontSize: 12,
+},
+
 });

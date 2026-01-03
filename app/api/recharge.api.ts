@@ -68,3 +68,29 @@ export const checkMobilePlansApi = async (options: {
     },
   });
 };
+
+export const rechargeRequestApi = async (options: {
+  domain: string;
+  latitude: string;
+  longitude: string;
+  token: string;
+  mobile: string;
+  amount: number | string;
+  operator_code: string | number;
+}) => {
+  return apiClient({
+    endpoint: "/spm/recharge",
+    method: "POST",
+    headers: {
+      domain: options.domain,
+      latitude: options.latitude,
+      longitude: options.longitude,
+      Authorization: `Bearer ${options.token}`,
+    },
+    body: {
+      mobile: options.mobile,
+      amount: Number(options.amount), // Ensuring it's a number as per your payload
+      operator_code: options.operator_code,
+    },
+  });
+};
