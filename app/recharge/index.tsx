@@ -79,6 +79,7 @@ export default function RechargeScreen() {
     const [operator, setOperator] = useState<any>(null);
     const [circle, setCircle] = useState("");
     const [circleCode, setCircleCode] = useState("")
+    const [operatorCode,setOperatorCode]=useState('')
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
     const [detecting, setDetecting] = useState(false);
@@ -110,9 +111,9 @@ export default function RechargeScreen() {
             fetchOperatorDetails(mobile);
         } else if (mobile.length < 10) {
             setCircle("");
-              setSelectedPlan(null);
-  setAmount("");
-  setOperator("")
+            setSelectedPlan(null);
+            setAmount("");
+            setOperator("")
         }
     }, [mobile]);
 
@@ -131,8 +132,11 @@ export default function RechargeScreen() {
                 token: token || "",
             });
 
+           
             if (res.success && res.data?.data?.Operator) {
+                
                 const apiOperatorName = res.data.data.Operator.toUpperCase();
+              
                 const matchedOp = operators.find((op) =>
                     apiOperatorName.includes(op.label.toUpperCase()) ||
                     op.label.toUpperCase().includes(apiOperatorName)
@@ -142,6 +146,11 @@ export default function RechargeScreen() {
                     setOperator(matchedOp);
                     setCircle(res.data.data.Circle || "India");
                     setCircleCode(res.data.data.circleCode || "00")
+                    setOperatorCode(res.data.data.OpCode);
+                    console.log("==res==",res)
+                     
+
+                    
                 }
             }
         } catch (err) {
@@ -162,7 +171,7 @@ export default function RechargeScreen() {
 
             const res = await checkROffersApi({
                 mobile,
-                operator_code: operator?.value,
+                operator_code: operatorCode,
                 domain: domainName,
                 latitude: location?.latitude?.toString() || "0.0",
                 longitude: location?.longitude?.toString() || "0.0",
@@ -191,6 +200,7 @@ export default function RechargeScreen() {
 
 
     const handleFetchPlans = async () => {
+        console.log("hii")
         if (!operator || !circle) {
             Toast.show({ type: "error", text1: "Please select operator first" });
             return;
@@ -202,8 +212,10 @@ export default function RechargeScreen() {
             const token = await SecureStore.getItemAsync("userToken");
             const domainName = Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
 
+            console.log("==operator code==", operatorCode)
+            console.log("==circle code==",circleCode)
             const res = await checkMobilePlansApi({
-                operator_code: operator.value,
+                operator_code: operatorCode,
                 circle: circleCode, // Matches your API parameter
                 domain: domainName,
                 latitude: location?.latitude?.toString() || "0.0",
@@ -388,28 +400,28 @@ export default function RechargeScreen() {
                         </View>
 
                         {/* SELECTED PLAN SUMMARY */}
-{selectedPlan && (
-  <View style={styles.selectedPlanCard}>
-    <View style={styles.selectedPlanHeader}>
-      <Text style={styles.selectedPlanPrice}>₹{selectedPlan.rs}</Text>
-      <View style={styles.validityBadge}>
-        <Clock size={12} color={theme.colors.primary[600]} />
-        <Text style={styles.validityText}>{selectedPlan.validity}</Text>
-      </View>
-    </View>
+                        {selectedPlan && (
+                            <View style={styles.selectedPlanCard}>
+                                <View style={styles.selectedPlanHeader}>
+                                    <Text style={styles.selectedPlanPrice}>₹{selectedPlan.rs}</Text>
+                                    <View style={styles.validityBadge}>
+                                        <Clock size={12} color={theme.colors.primary[600]} />
+                                        <Text style={styles.validityText}>{selectedPlan.validity}</Text>
+                                    </View>
+                                </View>
 
-    <Text style={styles.selectedPlanDesc} numberOfLines={3}>
-      {selectedPlan.desc}
-    </Text>
+                                <Text style={styles.selectedPlanDesc} numberOfLines={3}>
+                                    {selectedPlan.desc}
+                                </Text>
 
-    <TouchableOpacity
-      onPress={() => setPlanModalVisible(true)}
-      style={styles.changePlanBtn}
-    >
-      <Text style={styles.changePlanText}>Change Plan</Text>
-    </TouchableOpacity>
-  </View>
-)}
+                                <TouchableOpacity
+                                    onPress={() => setPlanModalVisible(true)}
+                                    style={styles.changePlanBtn}
+                                >
+                                    <Text style={styles.changePlanText}>Change Plan</Text>
+                                </TouchableOpacity>
+                            </View>
+                        )}
 
 
                         {/* INPUT: Amount */}
@@ -832,42 +844,42 @@ const styles = StyleSheet.create({
     },
 
     selectedPlanCard: {
-  backgroundColor: '#F8FAFC',
-  borderRadius: 16,
-  padding: 14,
-  marginBottom: 16,
-  borderWidth: 1,
-  borderColor: '#E2E8F0',
-},
+        backgroundColor: '#F8FAFC',
+        borderRadius: 16,
+        padding: 14,
+        marginBottom: 16,
+        borderWidth: 1,
+        borderColor: '#E2E8F0',
+    },
 
-selectedPlanHeader: {
-  flexDirection: 'row',
-  justifyContent: 'space-between',
-  alignItems: 'center',
-  marginBottom: 6,
-},
+    selectedPlanHeader: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: 6,
+    },
 
-selectedPlanPrice: {
-  fontSize: 20,
-  fontWeight: '900',
-  color: '#1E293B',
-},
+    selectedPlanPrice: {
+        fontSize: 20,
+        fontWeight: '900',
+        color: '#1E293B',
+    },
 
-selectedPlanDesc: {
-  fontSize: 13,
-  color: '#475569',
-  lineHeight: 18,
-  marginBottom: 8,
-},
+    selectedPlanDesc: {
+        fontSize: 13,
+        color: '#475569',
+        lineHeight: 18,
+        marginBottom: 8,
+    },
 
-changePlanBtn: {
-  alignSelf: 'flex-end',
-},
+    changePlanBtn: {
+        alignSelf: 'flex-end',
+    },
 
-changePlanText: {
-  color: theme.colors.primary[600],
-  fontWeight: '800',
-  fontSize: 12,
-},
+    changePlanText: {
+        color: theme.colors.primary[600],
+        fontWeight: '800',
+        fontSize: 12,
+    },
 
 });
