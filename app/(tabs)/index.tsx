@@ -1,9 +1,9 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, TouchableOpacity } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Wallet, ArrowUpRight, ArrowDownLeft, Zap,
-  Clock, XCircle, User
+  Clock, XCircle, User, Plus
 } from 'lucide-react-native';
 import { theme } from '@/theme';
 import { useAuth } from '@/context/AuthContext';
@@ -241,32 +241,35 @@ export default function HomeScreen() {
         </View>
 
         <AnimatedCard style={styles.balanceCard}>
-          {/* HEADER */}
           <View style={styles.balanceHeader}>
             <View style={styles.balanceIconContainer}>
               <Wallet size={22} color={theme.colors.primary[500]} />
             </View>
-
-            <View>
+            <View style={{ flex: 1 }}>
               <Text style={styles.balanceLabel}>Available Balance</Text>
               <Text style={styles.balanceSubLabel}>Wallet</Text>
             </View>
           </View>
 
-          {/* BALANCE */}
           {balanceLoading ? (
             <ShimmerPlaceholder style={styles.balanceShimmer} />
           ) : (
-            <Text style={styles.balanceAmount}>
-              ₹{Number(balance ?? 0).toFixed(2)}
-            </Text>
+            <Text style={styles.balanceAmount}>₹{Number(balance ?? 0).toFixed(2)}</Text>
           )}
 
-          {/* FOOTER INFO */}
           <View style={styles.balanceFooter}>
             <View style={styles.balancePill}>
               <Text style={styles.balancePillText}>Instantly Usable</Text>
             </View>
+            <TouchableOpacity
+              style={styles.addFundButton}
+              onPress={() => { router.push('/funds' as any) }}
+              activeOpacity={0.7}
+              
+            >
+              <Plus size={16} color="#FFF" />
+              <Text style={styles.addFundText}>Add Funds</Text>
+            </TouchableOpacity>
           </View>
         </AnimatedCard>
       </LinearGradient>
@@ -470,25 +473,6 @@ const styles = StyleSheet.create({
     color: theme.colors.text.secondary,
     marginTop: 2,
   },
-
-  balanceFooter: {
-    marginTop: theme.spacing[4],
-    flexDirection: "row",
-    justifyContent: "flex-start",
-  },
-
-  balancePill: {
-    backgroundColor: theme.colors.success[50],
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 20,
-  },
-
-  balancePillText: {
-    fontSize: theme.typography.fontSizes.xs,
-    fontWeight: "600",
-    color: theme.colors.success[500],
-  },
   emptyState: {
     width: "100%",
     paddingVertical: 32,
@@ -508,6 +492,36 @@ const styles = StyleSheet.create({
     fontSize: theme.typography.fontSizes.sm,
     color: theme.colors.text.tertiary,
   },
+  balanceFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between', // Pushes Pill to left and Button to right
+    alignItems: 'center',
+    marginTop: 15,
+  },
+  addFundButton: {
+    backgroundColor: theme.colors.primary[500],
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingVertical: 8,
+    paddingHorizontal: 14,
+    borderRadius: 20,
+    gap: 6, // Spacing between Plus icon and Text
+  },
+  addFundText: {
+    color: '#FFF',
+    fontSize: 14,
+    fontWeight: '600',
+  },
+  balancePill: {
+    backgroundColor: theme.colors.primary[50] || '#F0F0F0',
+    paddingVertical: 4,
+    paddingHorizontal: 10,
+    borderRadius: 12,
+  },
+  balancePillText: {
+    fontSize: 12,
+    color: theme.colors.primary[600] || '#666',
+  }
 
 
 });

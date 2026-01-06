@@ -13,7 +13,7 @@ export const getLatLong = async (): Promise<LatLong | null> => {
   try {
     /** ✅ Use memory cache */
     if (cachedLocation) {
-      console.log("cached");
+      
       return cachedLocation;
     }
 

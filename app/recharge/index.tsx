@@ -13,8 +13,10 @@ import {
     FlatList,
     Pressable,
     Keyboard,
+    Vibration,
 
 } from "react-native";
+import { LinearGradient } from 'expo-linear-gradient';
 import Animated, {
     FadeIn,
     FadeOut,
@@ -24,7 +26,7 @@ import Animated, {
 import { theme } from "@/theme";
 import {
     Smartphone, IndianRupee, Zap, ChevronRight,
-    Tv, X, CheckCircle2, MapPin, Building2, Ticket, Clock, Search
+    Tv, X, CheckCircle2, MapPin, Building2, Ticket, Clock, Search, Delete
 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -79,7 +81,7 @@ export default function RechargeScreen() {
     const [operator, setOperator] = useState<any>(null);
     const [circle, setCircle] = useState("");
     const [circleCode, setCircleCode] = useState("")
-    const [operatorCode,setOperatorCode]=useState('')
+    const [operatorCode, setOperatorCode] = useState('')
     const [amount, setAmount] = useState("");
     const [loading, setLoading] = useState(false);
     const [detecting, setDetecting] = useState(false);
@@ -96,6 +98,29 @@ export default function RechargeScreen() {
     const [mpin, setMpin] = useState("");
     const [verifyingMpin, setVerifyingMpin] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
+
+
+    // Helper to render keypad buttons
+  const KeyButton = ({ value, onPress, isDelete = false }: any) => {
+  return (
+    <TouchableOpacity
+      style={styles.key}
+      onPress={() => {
+        Vibration.vibrate(10);
+        onPress();
+      }}
+      activeOpacity={0.7}
+    >
+      {isDelete ? (
+        <Delete size={24} color="#475569" />
+      ) : (
+        <Text style={styles.keyText}>{String(value)}</Text>
+      )}
+    </TouchableOpacity>
+  );
+};
+
+
 
 
     const isDTH = operator && operator.value >= 7 && operator.value <= 12;
@@ -132,11 +157,11 @@ export default function RechargeScreen() {
                 token: token || "",
             });
 
-           
+
             if (res.success && res.data?.data?.Operator) {
-                
+
                 const apiOperatorName = res.data.data.Operator.toUpperCase();
-              
+
                 const matchedOp = operators.find((op) =>
                     apiOperatorName.includes(op.label.toUpperCase()) ||
                     op.label.toUpperCase().includes(apiOperatorName)
@@ -147,10 +172,10 @@ export default function RechargeScreen() {
                     setCircle(res.data.data.Circle || "India");
                     setCircleCode(res.data.data.circleCode || "00")
                     setOperatorCode(res.data.data.OpCode);
-                    console.log("==res==",res)
-                     
+                    console.log("==res==", res)
 
-                    
+
+
                 }
             }
         } catch (err) {
@@ -213,7 +238,7 @@ export default function RechargeScreen() {
             const domainName = Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
 
             console.log("==operator code==", operatorCode)
-            console.log("==circle code==",circleCode)
+            console.log("==circle code==", circleCode)
             const res = await checkMobilePlansApi({
                 operator_code: operatorCode,
                 circle: circleCode, // Matches your API parameter
@@ -252,6 +277,18 @@ export default function RechargeScreen() {
         } finally {
             setFetchingPlans(false);
         }
+    };
+
+    const handleKeyPress = (val: string) => {
+        if (mpin.length < 4) {
+            Vibration.vibrate(10);
+            setMpin((prev) => prev + val);
+        }
+    };
+
+    const handleDelete = () => {
+        Vibration.vibrate(10);
+        setMpin((prev) => prev.slice(0, -1));
     };
 
     const handleMpinSubmit = async () => {
@@ -616,55 +653,61 @@ export default function RechargeScreen() {
                 title="Enter MPIN"
                 subtitle="Confirm your security code to proceed"
             >
-                <KeyboardAvoidingView
-                    behavior={Platform.OS === "ios" ? "padding" : "padding"} // Changed to padding for consistency
-                    keyboardVerticalOffset={Platform.OS === "ios" ? 100 : 0}
-                    style={{ flex: 1 }}
-                >
-                    <ScrollView
-                        keyboardShouldPersistTaps="handled"
-                        contentContainerStyle={{ flexGrow: 1, paddingBottom: 40 }} // Added flexGrow: 1
-                        showsVerticalScrollIndicator={false}
-                    >
-                        <View style={{ marginTop: 20 }}>
-                            {/* MPIN INPUT */}
-                            <View style={styles.inputWrapper}>
-                                <Zap size={20} color={theme.colors.primary[500]} />
-                                <TextInput
-                                    style={styles.input}
-                                    placeholder="Enter 4-digit MPIN"
-                                    placeholderTextColor="#94A3B8"
-                                    keyboardType="numeric"
-                                    secureTextEntry
-                                    maxLength={4}
-                                    value={mpin}
-                                    onChangeText={setMpin}
-                                    autoFocus
-                                    returnKeyType="done"
-                                    onSubmitEditing={handleMpinSubmit} // Submit on keyboard 'Done'
-                                />
-                            </View>
+                <View style={styles.contentWrapper}>
 
-                            {/* CONFIRM BUTTON */}
-                            <TouchableOpacity
-                                style={[styles.btn, { marginTop: 30 }]}
-                                onPress={handleMpinSubmit}
-                                disabled={verifyingMpin}
-                            >
-                                <View style={styles.btnLeft}>
-                                    {verifyingMpin ? (
-                                        <ActivityIndicator color="#FFF" />
-                                    ) : (
-                                        <>
-                                            <CheckCircle2 size={18} color="#FFF" />
-                                            <Text style={styles.btnText}>Confirm & Pay</Text>
-                                        </>
-                                    )}
+                    {/* 1. VISUAL DOTS */}
+                    <View style={styles.dotsContainer}>
+                        {[1, 2, 3, 4].map((_, i) => (
+                            <View
+                                key={i}
+                                style={[
+                                    styles.mpinDot,
+                                    mpin.length > i && styles.mpinDotFilled,
+                                    // Add a primary green color to match your AEPS theme
+                                    mpin.length > i && { backgroundColor: "#10B981" }
+                                ]}
+                            />
+                        ))}
+                    </View>
+
+                    {/* 2. CUSTOM KEYPAD */}
+                    <View style={styles.keypadGrid}>
+                        {[1, 2, 3, 4, 5, 6, 7, 8, 9].map((num) => (
+                            <KeyButton key={num} value={num} onPress={() => handleKeyPress(num.toString())} />
+                        ))}
+                       <View style={styles.key} pointerEvents="none" />
+
+                        <KeyButton value="0" onPress={() => handleKeyPress("0")} />
+                       <KeyButton isDelete onPress={handleDelete} />
+                    </View>
+
+                    {/* 3. ACTION BUTTON */}
+                    <TouchableOpacity
+                        onPress={handleMpinSubmit}
+                        disabled={verifyingMpin || mpin.length < 4}
+                        activeOpacity={0.8}
+                        style={styles.btnSpacing}
+                    >
+                        <LinearGradient
+                            colors={["#10B981", "#059669"]} // Green Gradient
+                            start={{ x: 0, y: 0 }}
+                            end={{ x: 1, y: 0 }}
+                            style={[
+                                styles.gradientBtn,
+                                (mpin.length < 4 || verifyingMpin) && { opacity: 0.5 }
+                            ]}
+                        >
+                            {verifyingMpin ? (
+                                <ActivityIndicator color="#FFF" />
+                            ) : (
+                                <View style={styles.btnInnerContent}>
+                                    <CheckCircle2 size={18} color="#FFF" />
+                                    <Text style={styles.confirmBtnText}>Confirm Payment</Text>
                                 </View>
-                            </TouchableOpacity>
-                        </View>
-                    </ScrollView>
-                </KeyboardAvoidingView>
+                            )}
+                        </LinearGradient>
+                    </TouchableOpacity>
+                </View>
             </CustomModal>
 
 
@@ -880,6 +923,137 @@ const styles = StyleSheet.create({
         color: theme.colors.primary[600],
         fontWeight: '800',
         fontSize: 12,
+    },
+    modalScrollContent: {
+        flexGrow: 1,
+        paddingBottom: 20,
+    },
+
+
+    premiumInputBox: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        width: '100%',
+        height: 70,
+        backgroundColor: '#FFF',
+        borderRadius: 22,
+        paddingHorizontal: 16,
+        borderWidth: 1.5,
+        borderColor: '#F1F5F9',
+        elevation: 3,
+        shadowColor: '#000',
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.05,
+        shadowRadius: 10,
+    },
+    iconCircle: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#8B5CF6',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+    mpinTextInput: {
+        flex: 1,
+        fontSize: 16,
+        fontWeight: '600',
+        color: '#1E293B',
+        marginLeft: 12,
+    },
+    inputDecorDots: {
+        flexDirection: 'row',
+        gap: 4,
+    },
+    miniDot: {
+        width: 6,
+        height: 6,
+        borderRadius: 3,
+        backgroundColor: '#CBD5E1',
+    },
+    gradientBtnWrapper: {
+        width: '100%',
+        marginTop: 30,
+        elevation: 8,
+        shadowColor: '#8B5CF6',
+        shadowOffset: { width: 0, height: 10 },
+        shadowOpacity: 0.3,
+        shadowRadius: 15,
+    },
+
+
+    checkCircleWhite: {
+        width: 24,
+        height: 24,
+        borderRadius: 12,
+        backgroundColor: '#FFF',
+        justifyContent: 'center',
+        alignItems: 'center',
+    },
+
+    cancelLink: {
+        marginTop: 25,
+        padding: 10,
+    },
+    cancelLinkText: {
+        color: '#10B981', // Emerald Green from reference
+        fontSize: 16,
+        fontWeight: '700',
+    },
+    contentWrapper: { paddingVertical: 10, alignItems: "center" },
+    dotsContainer: {
+        flexDirection: "row",
+        justifyContent: "center",
+        marginBottom: 30,
+        marginTop: 10,
+    },
+    mpinDot: {
+        width: 18,
+        height: 18,
+        borderRadius: 9,
+        borderWidth: 2,
+        borderColor: "#E2E8F0",
+        marginHorizontal: 12,
+    },
+    mpinDotFilled: {
+        borderColor: "#10B981",
+        transform: [{ scale: 1.1 }],
+    },
+    keypadGrid: {
+        flexDirection: "row",
+        flexWrap: "wrap",
+        width: "100%",
+        justifyContent: "center",
+        marginBottom: 20,
+    },
+    key: {
+        width: "30%",
+        height: 65,
+        justifyContent: "center",
+        alignItems: "center",
+        marginVertical: 5,
+    },
+    keyText: {
+        fontSize: 26,
+        fontWeight: "600",
+        color: "#1E293B",
+    },
+    btnSpacing: { width: "100%", marginTop: 10 },
+    gradientBtn: {
+        height: 55,
+        borderRadius: 12,
+        justifyContent: "center",
+        alignItems: "center",
+    },
+    btnInnerContent: {
+        flexDirection: "row",
+        alignItems: "center",
+    },
+    confirmBtnText: {
+        color: "#FFF",
+        fontWeight: "700",
+        fontSize: 16,
+        marginLeft: 10,
     },
 
 });
