@@ -168,7 +168,7 @@ const FundsScreen = () => {
         <View style={styles.container}>
             {/* Header Section */}
             <View style={styles.header}>
-                <Text style={styles.headerTitle}>Fund Requests</Text>
+                <Text style={styles.headerTitle}></Text>
                 <TouchableOpacity
                     style={styles.addFundButton}
                     activeOpacity={0.7}
@@ -191,7 +191,7 @@ const FundsScreen = () => {
                     showsVerticalScrollIndicator={false}
                     keyExtractor={(item) => item.id.toString()}
                     renderItem={renderFundCard}
-                    contentContainerStyle={[styles.listContent,{flex:1}]}
+                    contentContainerStyle={[styles.listContent]}
                     refreshControl={
                         <RefreshControl
                             refreshing={refreshing}

@@ -258,14 +258,27 @@ export default function HomeScreen() {
           )}
 
           <View style={styles.balanceFooter}>
-            <View style={styles.balancePill}>
-              <Text style={styles.balancePillText}>Instantly Usable</Text>
-            </View>
+            <TouchableOpacity
+              style={styles.addFundButton}
+              onPress={() => {
+                router.push({
+                  pathname: "/send-payout/RequestPayout",
+                  params: {
+                    heading:"Move to Bank"
+                  }
+                });
+              }}
+              activeOpacity={0.7}
+
+            >
+              <Plus size={16} color="#FFF" />
+              <Text style={styles.addFundText}>Move to Bank</Text>
+            </TouchableOpacity>
             <TouchableOpacity
               style={styles.addFundButton}
               onPress={() => { router.push('/funds' as any) }}
               activeOpacity={0.7}
-              
+
             >
               <Plus size={16} color="#FFF" />
               <Text style={styles.addFundText}>Add Funds</Text>
@@ -277,7 +290,9 @@ export default function HomeScreen() {
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Quick Services</Text>
-          <Pressable onPress={() => { router.push("/(tabs)/services") }}><Text style={styles.seeAllText}>See All</Text></Pressable>
+          <TouchableOpacity style={{ flex: 0.5, alignItems: 'flex-end' }} onPress={() => { router.push("/(tabs)/services") }}>
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
         </View>
 
         <View style={styles.servicesGrid}>
@@ -324,7 +339,9 @@ export default function HomeScreen() {
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
-          <Pressable onPress={() => { router.push("/(tabs)/transactions") }}><Text style={styles.seeAllText}>See All</Text></Pressable>
+          <TouchableOpacity style={{ flex: 0.5, alignItems: 'flex-end' }} onPress={() => { router.push("/(tabs)/transactions") }}>
+            <Text style={styles.seeAllText}>See All</Text>
+          </TouchableOpacity>
         </View>
 
         {/* LOADING STATE */}

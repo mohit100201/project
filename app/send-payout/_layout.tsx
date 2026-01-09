@@ -1,7 +1,7 @@
 import { Stack } from "expo-router";
 import { theme } from "@/theme";
 
-export default function FundsLayout() {
+export default function SendPayoutLayout() {
   return (
     <Stack
       screenOptions={{
@@ -14,9 +14,9 @@ export default function FundsLayout() {
         },
       }}
     >
-      <Stack.Screen name="index" options={{ title: "Fund Request" }} />
+      <Stack.Screen name="index" options={{ title: "Move to Bank" }} />
      
-      <Stack.Screen name="RequestFunds" options={{ title: "Add Funds" }} />
+      <Stack.Screen name="RequestPayout" options={{ title: "Payout" }} />
     </Stack>
   );
 }

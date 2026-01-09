@@ -10,7 +10,8 @@ import {
     FlatList,
     KeyboardAvoidingView,
     Platform,
-    ScrollView
+    ScrollView,
+    Linking
 } from "react-native";
 import {
     Building2,
@@ -35,6 +36,10 @@ import {
     fetchBankListApi,
 } from "../api/funds.api";
 import DropDownPicker from "react-native-dropdown-picker";
+import DateTimePicker from "@react-native-community/datetimepicker";
+import * as DocumentPicker from "expo-document-picker";
+
+
 
 const { width } = Dimensions.get("window");
 
@@ -68,43 +73,104 @@ const RequestFunds = () => {
     const userToken = useRef<string | null>(null);
     const [bankList, setBankList] = useState<any[]>([]);
 
+    const [showDatePicker, setShowDatePicker] = useState(false);
+    const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+    const [uploadedFile, setUploadedFile] = useState<any>(null);
+
+    const isImage = (type?: string) => {
+        return type?.startsWith("image/");
+    };
+
+    const isPdf = (type?: string) => {
+        return type === "application/pdf";
+    };
 
 
-    const loadBankList = async () => {
+    const handleDocumentUpload = async () => {
         try {
-            setLoading(true);
+            const result = await DocumentPicker.getDocumentAsync({
+                type: [
+                    "image/*",
+                    "application/pdf"
+                ],
+                multiple: false,
+                copyToCacheDirectory: true,
+            });
 
-            // 1. Get Location & Token
-            const location = await getLatLong();
-            const token = await SecureStore.getItemAsync("userToken");
-
-            if (!location || !token) {
-                console.error("Location or Token missing");
+            if (result.canceled) {
                 return;
             }
 
-            // 2. Prepare Options (matching FetchBankListOptions interface)
+            const file = result.assets[0];
+
+            setUploadedFile({
+                uri: file.uri,
+                name: file.name,
+                type: file.mimeType,
+                size: file.size,
+            });
+
+            console.log("Uploaded file:", file);
+        } catch (error) {
+            console.error("Document upload failed:", error);
+        }
+    };
+
+
+
+    const onDateChange = (_event: any, date?: Date) => {
+        setShowDatePicker(false);
+
+        if (date) {
+            setSelectedDate(date);
+
+            const formattedDate = `${String(date.getDate()).padStart(2, "0")}-${String(
+                date.getMonth() + 1
+            ).padStart(2, "0")}-${date.getFullYear()}`;
+
+            setTransactionDate(formattedDate);
+        }
+    };
+
+
+
+
+    const loadBankList = async (paymentMode: string) => {
+        try {
+            setLoading(true);
+
+            const location = await getLatLong();
+            const token = await SecureStore.getItemAsync("userToken");
+
+            if (!location || !token) return;
+
             const options = {
                 domain: Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com",
-                token: token,
+                token,
                 latitude: String(location.latitude),
                 longitude: String(location.longitude),
-                payload: {} // Add any specific filters if required by your API
+                payload: {}
             };
 
-            // 3. Call the API
             const response = await fetchBankListApi(options);
-            console.log("==banks==",response)
+            console.log("==res==", response)
 
-            // 4. Handle Response
-            if (response.success && Array.isArray(response.data)) {
-                const formattedBanks = response.data.map((bank: any) => ({
-                    label: bank.bankName || bank.name, // Adjust key names based on your API response
-                    value: bank.bankId?.toString() || bank.id?.toString(),
-                }));
-                setBankList(formattedBanks);
-            } else {
-                console.error("API Error:", response.message);
+
+            if (response.success && Array.isArray(response.data.bank_list)) {
+
+                const filteredBanks = response.data.bank_list
+                    .filter((bank: any) =>
+                        bank.channelsSupported === "ALL" ||
+                        bank.channelsSupported === paymentMode
+                    )
+                    .map((bank: any) => ({
+                        label: bank.bankName,
+                        value: bank.bankCode,
+                    }));
+
+                console.log("==filter bank==", filteredBanks)
+
+                setBankList(filteredBanks);
             }
         } catch (error) {
             console.error("Failed to fetch bank list:", error);
@@ -112,6 +178,7 @@ const RequestFunds = () => {
             setLoading(false);
         }
     };
+
 
     const fetchPaymentMethods = async () => {
         try {
@@ -162,8 +229,26 @@ const RequestFunds = () => {
 
     useEffect(() => {
         fetchPaymentMethods();
-        loadBankList();
+
     }, []);
+
+    useEffect(() => {
+        if (paymentModeValue !== "UPI") {
+            loadBankList(paymentModeValue);
+        } else {
+            // Reset when UPI selected
+            setBankList([]);
+            setSelectedBankValue(null);
+        }
+    }, [paymentModeValue]);
+
+    useEffect(() => {
+        if (openBankPicker && bankList.length === 0 && !loading) {
+            setOpenBankPicker(true);
+        }
+    }, [bankList, loading]);
+
+
 
     const copyToClipboard = async (text: string) => {
         await Clipboard.setStringAsync(text);
@@ -277,29 +362,52 @@ const RequestFunds = () => {
 
             />
 
-           
-            {paymentModeValue!="UPI" &&  
-            <>
-            <Text style={styles.inputLabel}>Select Bank *</Text>
-            <DropDownPicker
-                open={openBankPicker}
-                value={selectedBankValue}
-                items={bankList} // Using the state populated by the API call
-                setOpen={setOpenBankPicker}
-                setValue={setSelectedBankValue}
-                placeholder="Select destination bank"
-                searchable={true}
-                loading={loading} // Show loading spinner inside dropdown
-                zIndex={2000}
-                style={styles.dropdown}
-                dropDownContainerStyle={styles.dropdownContainer}
-                labelStyle={{ color: '#FFF' }}
-                listItemLabelStyle={{ color: '#FFF' }}
-            />
-            
-            </>}
-            
-           
+
+            {paymentModeValue != "UPI" &&
+                <>
+                    <Text style={styles.inputLabel}>Select Bank</Text>
+                    <DropDownPicker
+                        open={openBankPicker}
+                        value={selectedBankValue}
+                        items={bankList}
+                        setOpen={setOpenBankPicker}
+                        setValue={setSelectedBankValue}
+                        placeholder="Select destination bank"
+                        searchable={true}
+
+                        loading={loading}
+                        disabled={false}
+
+                        listMode="SCROLLVIEW"
+                        scrollViewProps={{ nestedScrollEnabled: true }}
+                        maxHeight={250}
+
+                        zIndex={2000}
+                        zIndexInverse={1000}
+
+                        style={styles.dropdown}
+                        dropDownContainerStyle={styles.dropdownContainer}
+
+                        ListEmptyComponent={() => (
+                            <View style={{ padding: 15, alignItems: "center" }}>
+                                {loading ? (
+                                    <Text style={{ color: "#AAA", fontSize: 13 }}>
+                                        Fetching banks...
+                                    </Text>
+                                ) : (
+                                    <Text style={{ color: "#AAA", fontSize: 13 }}>
+                                        No banks available
+                                    </Text>
+                                )}
+                            </View>
+                        )}
+                    />
+
+
+
+                </>}
+
+
 
             <Text style={styles.inputLabel}>UTR / Reference Number</Text>
             <TextInput
@@ -311,26 +419,62 @@ const RequestFunds = () => {
             />
 
             <Text style={styles.inputLabel}>Transaction Date</Text>
-            <View style={styles.dateInputRow}>
+            <TouchableOpacity style={styles.dateInputRow} onPress={() => setShowDatePicker(true)}>
                 <TextInput
                     style={[styles.input, { flex: 1, marginBottom: 0 }]}
                     placeholder="DD-MM-YYYY"
                     value={transactionDate}
                     onChangeText={setTransactionDate}
+                    editable={false}
                     placeholderTextColor={theme.colors.text.secondary}
                 />
-                <TouchableOpacity style={styles.calendarBtn}>
-                    <Calendar size={20} color={theme.colors.primary[500]} />
-                </TouchableOpacity>
-            </View>
+                <View
+                    style={styles.calendarBtn}
 
-            <Text style={[styles.inputLabel, { marginTop: 20 }]}>Payment Proof</Text>
-            <TouchableOpacity style={styles.uploadButton}>
-                <Upload size={20} color={theme.colors.text.secondary} />
-                <Text style={styles.uploadText}>Click to upload</Text>
+                >
+                    <Calendar size={20} color={theme.colors.primary[500]} />
+                </View>
+
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.submitButton}>
+            <Text style={[styles.inputLabel, { marginTop: 20 }]}>Payment Proof</Text>
+            <TouchableOpacity
+                style={[styles.uploadButton,{borderWidth:1,borderColor:'black'}]}
+                onPress={handleDocumentUpload}
+            >
+                <Upload size={20} color={theme.colors.text.secondary} />
+                <Text style={styles.uploadText}>
+                    {uploadedFile ? uploadedFile.name : "Click to upload"}
+                </Text>
+            </TouchableOpacity>
+
+            {uploadedFile && (
+                <View style={styles.previewContainer}>
+
+                    {/* IMAGE PREVIEW */}
+                    {isImage(uploadedFile.type) && (
+                        <Image
+                            source={{ uri: uploadedFile.uri }}
+                            style={styles.imagePreview}
+                            resizeMode="cover"
+                        />
+                    )}
+
+                    {/* PDF PREVIEW */}
+                    {isPdf(uploadedFile.type) && (
+                        <TouchableOpacity
+                            style={styles.pdfPreview}
+                            onPress={() => Linking.openURL(uploadedFile.uri)}
+                        >
+                            <Text style={styles.pdfText}>📄 View PDF</Text>
+                        </TouchableOpacity>
+                    )}
+
+                </View>
+            )}
+
+
+            <TouchableOpacity style={[styles.submitButton,{marginTop:16}]}>
                 <Text style={styles.submitButtonText}>Submit Request</Text>
                 <ChevronRight color="#FFF" size={20} />
             </TouchableOpacity>
@@ -339,6 +483,18 @@ const RequestFunds = () => {
                 <Info size={16} color={theme.colors.primary[500]} />
                 <Text style={styles.infoText}>Requests are usually processed within 30 minutes.</Text>
             </View>
+
+
+            {showDatePicker && (
+                <DateTimePicker
+                    value={selectedDate || new Date()}
+                    mode="date"
+                    display={Platform.OS === "ios" ? "spinner" : "default"}
+                    onChange={onDateChange}
+                    maximumDate={new Date()}
+                />
+            )}
+
         </AnimatedCard>
     );
 
@@ -420,7 +576,7 @@ const styles = StyleSheet.create({
     // Cards
     bankCard: { padding: 24, backgroundColor: theme.colors.primary[600], borderRadius: 24 },
     bankHeader: { flexDirection: 'row', alignItems: 'center', gap: 10, marginBottom: 20 },
-    bankNameText: { fontSize: 20, fontWeight: "800",color:'white' },
+    bankNameText: { fontSize: 20, fontWeight: "800", color: 'white' },
 
     qrCard: { alignItems: "center", backgroundColor: '#FFF', padding: 24, borderRadius: 24 },
     qrBadge: { backgroundColor: theme.colors.primary[50], paddingHorizontal: 12, paddingVertical: 4, borderRadius: 12, marginBottom: 15 },
@@ -491,8 +647,32 @@ const styles = StyleSheet.create({
 
     detailItem: { flexDirection: "row", justifyContent: "space-between", marginBottom: 16 },
     detailLabel: { color: "rgba(255,255,255,0.6)", fontSize: 11, textTransform: 'uppercase', letterSpacing: 0.5 },
-    detailValue: { fontSize: 16, fontWeight: '600', marginTop: 2,color:'white' },
-    copyBtn: { padding: 4 }
+    detailValue: { fontSize: 16, fontWeight: '600', marginTop: 2, color: 'white' },
+    copyBtn: { padding: 4 },
+    previewContainer: {
+        marginTop: 10,
+    },
+
+    imagePreview: {
+        width: "100%",
+        height: 180,
+        borderRadius: 12,
+        borderWidth: 1,
+        borderColor: "rgba(255,255,255,0.2)",
+    },
+
+    pdfPreview: {
+        padding: 14,
+        borderRadius: 12,
+        backgroundColor: "rgba(255,255,255,0.08)",
+        alignItems: "center",
+        justifyContent: "center",
+    },
+
+    pdfText: {
+        color: theme.colors.primary[400],
+        fontWeight: "600",
+    },
 });
 
 export default RequestFunds;

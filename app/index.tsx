@@ -45,7 +45,7 @@ export default function Index() {
 
   // NAVIGATION LOGIC
   if (hasOpened === false) {
-    return <Redirect href="/onboarding" />;
+    return <Redirect href="/(auth)/login" />;
   }
 
   if (!isAuthenticated) {

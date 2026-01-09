@@ -87,17 +87,20 @@ export default function AepsScreen() {
       console.log("==resToken==", res)
 
       if (res.success && res.data.loginUrl) {
-        await new Promise((resolve) => setTimeout(resolve, 1000));
-
         const targetUrl = res.data.loginUrl;
 
-        router.push({
-          pathname: "/aeps/WebView",
-          params: {
-            url: targetUrl,
-            pipe: selectedPipe // Pass the bank name here for the header
-          },
-        });
+        
+        setTimeout(() => {
+          router.push({
+            pathname: "/aeps/WebView",
+            params: {
+              url: targetUrl,
+              pipe: selectedPipe,
+            },
+          });
+        }, 2000);
+
+
       } else {
         Toast.show({ type: "error", text1: res.message || "Token generation failed" });
       }
