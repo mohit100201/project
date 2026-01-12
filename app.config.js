@@ -33,7 +33,7 @@ export default ({ config }) => {
 
   return {
     ...config,
-
+    jsEngine: "hermes",
     /** ===============================
      *  APP IDENTITY
      *  =============================== */

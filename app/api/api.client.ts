@@ -34,8 +34,8 @@ export const apiClient = async ({
 }: ApiRequestOptions) => {
   const isFormData = body instanceof FormData;
 
-  console.log(`📤 API Request: ${method} ${endpoint}`);
-  console.log(`📦 Body:`, isFormData ? "[FormData]" : body);
+  // console.log(`📤 API Request: ${method} ${endpoint}`);
+  // console.log(`📦 Body:`, isFormData ? "[FormData]" : body);
 
   const response = await fetch(`${API_CONFIG.BASE_URL}${endpoint}`, {
     method,
@@ -50,7 +50,7 @@ export const apiClient = async ({
   const json = await response.json();
 
   if (!response.ok) {
-    console.log(`❌ API Error Response:`, JSON.stringify(json, null, 2));
+    // console.log(`❌ API Error Response:`, JSON.stringify(json, null, 2));
     
     // ✅ Throw custom error that preserves all response data
     throw new ApiError(
@@ -60,6 +60,6 @@ export const apiClient = async ({
     );
   }
 
-  console.log(`✅ API Success:`, json);
+  // console.log(`✅ API Success:`, json);
   return json;
 };

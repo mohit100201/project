@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Camera,
   User,
+  CreditCard, FileText
 } from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 import * as ImagePicker from "expo-image-picker";
@@ -59,6 +60,8 @@ export default function ProfileScreen() {
   const tenantData = Constants.expoConfig?.extra?.tenantData;
   const domainName = tenantData?.domain || "laxmeepay.com";
   const [mpinLoading, setMpinLoading] = useState(false);
+  const [isNavigating, setIsNavigating] = useState(false);
+
 
 
 
@@ -201,9 +204,9 @@ export default function ProfileScreen() {
           text1: "OTP Sent",
           text2: res.message,
         });
-        setTimeout(()=>{
+        setTimeout(() => {
           setShowSetupMPIN(true)
-        },500)
+        }, 500)
       }
     } catch (err: any) {
       Toast.show({
@@ -237,45 +240,79 @@ export default function ProfileScreen() {
             ? "Update your security PIN"
             : "Set up your 4-digit security PIN",
           onPress: () => {
-
-            handleResetMpin()
+            handleResetMpin();
           },
           showChevron: true,
         },
       ],
     },
-    // {
-    //   title: "Preferences",
-    //   items: [
-    //     {
-    //       icon: Bell,
-    //       title: "Notifications",
-    //       subtitle: "Manage notification settings",
-    //       onPress: () => { },
-    //       showChevron: true,
-    //     },
-    //     {
-    //       icon: Settings,
-    //       title: "Settings",
-    //       subtitle: "App preferences and configuration",
-    //       onPress: () => { },
-    //       showChevron: true,
-    //     },
-    //   ],
-    // },
-    // {
-    //   title: "Support",
-    //   items: [
-    //     {
-    //       icon: HelpCircle,
-    //       title: "Help & Support",
-    //       subtitle: "Get help with your account",
-    //       onPress: () => { },
-    //       showChevron: true,
-    //     },
-    //   ],
-    // },
+
+    {
+      title: "Plans & Subscriptions",
+      items: [
+        {
+          icon: CreditCard,
+          title: "My Plan",
+          subtitle: "View or upgrade your current plan",
+          onPress: () => {
+            // ⛔ Prevent multiple taps
+            if (isNavigating) return;
+
+            if (!profileData || profileLoading) {
+              Toast.show({
+                type: "info",
+                text1: "Please wait",
+                text2: "Profile data is loading",
+              });
+              return;
+            }
+
+            if (!profileData?.user?.id) {
+              Toast.show({
+                type: "error",
+                text1: "Unable to proceed",
+                text2: "User information not available",
+              });
+              return;
+            }
+
+            setIsNavigating(true); // 🔒 Lock navigation
+
+            router.push({
+              pathname: "/plans-and-subs" as any,
+              params: {
+                userId: profileData.user.id.toString(),
+              },
+            });
+
+            // 🔓 Unlock after navigation settles
+            setTimeout(() => {
+              setIsNavigating(false);
+            }, 800);
+          },
+
+
+          showChevron: true,
+        },
+      ],
+    },
+
+    {
+      title: "Support",
+      items: [
+        {
+          icon: FileText,
+          title: "Complaints & Tickets",
+          subtitle: "Raise or track your support tickets",
+          onPress: () => {
+
+          },
+          showChevron: true,
+        },
+      ],
+    },
   ];
+
 
   return (
     <View style={styles.container}>

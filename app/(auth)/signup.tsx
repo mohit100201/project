@@ -117,8 +117,7 @@ export default function SignupScreen() {
       return;
     }
 
-    console.log("==yaha to aaya h ==");
-
+   
     const formattedPhone = addIndiaCountryCode(phone);
 
     const payload = {
@@ -130,7 +129,7 @@ export default function SignupScreen() {
       password_confirmation: passwordConfirmation,
     };
 
-    console.log("📤 SIGNUP PAYLOAD:", JSON.stringify(payload, null, 2));
+
 
     const meta = {
       domain: domainName,
@@ -138,7 +137,7 @@ export default function SignupScreen() {
       longitude: location.longitude,
     };
 
-    console.log("📍 SIGNUP META:", JSON.stringify(meta, null, 2));
+  
 
     const json = await registerApi(
       {
@@ -156,8 +155,7 @@ export default function SignupScreen() {
       }
     );
 
-    // ✅ This only runs if registerApi succeeds
-    console.log("✅ SIGNUP SUCCESS:", JSON.stringify(json, null, 2));
+
 
     Toast.show({
       type: "success",
@@ -174,9 +172,7 @@ export default function SignupScreen() {
     });
 
   } catch (err: any) {
-    console.log("❌ SIGNUP ERROR - Full error object:", err);
-    console.log("❌ Error response:", err?.response);
-    console.log("❌ Error response data:", JSON.stringify(err?.response?.data, null, 2));
+   
 
     const errors = err?.response?.data?.errors;
     let errorMessage = "Something went wrong. Please try again.";
@@ -185,9 +181,7 @@ export default function SignupScreen() {
       // Take first validation error message
       const firstKey = Object.keys(errors)[0];
       errorMessage = errors[firstKey][0];
-      
-      console.log("❌ Validation errors:", JSON.stringify(errors, null, 2));
-      console.log("❌ Showing error:", errorMessage);
+   
     } else if (err?.response?.data?.message) {
       errorMessage = err.response.data.message;
     }

@@ -43,10 +43,10 @@ export default function Index() {
     );
   }
 
-  // NAVIGATION LOGIC
-  if (hasOpened === false) {
-    return <Redirect href="/(auth)/login" />;
-  }
+  // // NAVIGATION LOGIC
+  // if (hasOpened === false) {
+  //   return <Redirect href="/(auth)/login" />;
+  // }
 
   if (!isAuthenticated) {
     return <Redirect href="/(auth)/login" />;
