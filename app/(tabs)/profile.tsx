@@ -7,6 +7,7 @@ import {
   ScrollView,
   Pressable,
   Alert,
+  TouchableOpacity,
 } from "react-native";
 import { useRouter } from "expo-router";
 import {
@@ -305,7 +306,12 @@ export default function ProfileScreen() {
           title: "Complaints & Tickets",
           subtitle: "Raise or track your support tickets",
           onPress: () => {
-
+            if (isNavigating) return;
+            setIsNavigating(true);
+            router.push("/complain-tickets" as any)
+            setTimeout(() => {
+              setIsNavigating(false);
+            }, 800);
           },
           showChevron: true,
         },
@@ -369,7 +375,7 @@ export default function ProfileScreen() {
               {section.items.map((item, index) => {
                 const Icon = item.icon;
                 return (
-                  <Pressable
+                  <TouchableOpacity
                     key={item.title}
                     style={[
                       styles.menuItem,
@@ -401,7 +407,7 @@ export default function ProfileScreen() {
                         color={theme.colors.text.tertiary}
                       />
                     )}
-                  </Pressable>
+                  </TouchableOpacity>
                 );
               })}
             </AnimatedCard>

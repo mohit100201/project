@@ -1,6 +1,6 @@
 import { Stack } from "expo-router";
 
-export default function DMTLayout() {
+export default function PlansAndSubsLayout() {
   return (
     <Stack>
       <Stack.Screen
