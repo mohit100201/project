@@ -23,6 +23,8 @@ const MyPlans = () => {
   const [showMpin, setShowMpin] = useState(false);
   const [upgrading, setUpgrading] = useState(false);
   const [selectedPlan, setSelectedPlan] = useState<any>(null);
+  const [kycLoading, setKycLoading] = useState(true);
+const [isKycDone, setIsKycDone] = useState(false);
 
 
 
