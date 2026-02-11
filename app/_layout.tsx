@@ -20,7 +20,6 @@ export default function RootLayout() {
         <Stack screenOptions={{ headerShown: false }}>
           {/* We define the screens here, but index.tsx handles the logic */}
           <Stack.Screen name="index" /> 
-          <Stack.Screen name="onboarding" />
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="+not-found" />

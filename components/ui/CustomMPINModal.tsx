@@ -23,7 +23,7 @@ import Toast from "react-native-toast-message";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
-import { confirmMpinApi } from "@/app/api/mpin.api";
+import { confirmMpinApi } from "@/api/mpin.api";
 import { getLatLong } from "@/utils/location";
 
 interface Props {
@@ -81,7 +81,7 @@ export const MpinVerificationModal = ({
       mpin,
     });
 
-    console.log("==Mpin==",res)
+   
 
     if (!res.success) {
       setMpin("");

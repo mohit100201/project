@@ -17,7 +17,7 @@ import { theme } from '@/theme';
 import { AnimatedInput } from '@/components/animated/AnimatedInput';
 import { AnimatedButton } from '@/components/animated/AnimatedButton';
 import { BrandedLogo } from '@/components/ui/BrandLogo';
-import { forgotPasswordApi } from '../api/auth.api';
+import { forgotPasswordApi } from '../../api/auth.api';
 import { getLatLong } from '@/utils/location';
 
 export default function ForgotPasswordScreen() {

@@ -24,7 +24,7 @@ import { useBranding } from '@/context/BrandingContext';
 
 import { theme } from "@/theme";
 import { getLatLong } from "@/utils/location";
-import { setMpinApi } from "@/app/api/mpin.api";
+import { setMpinApi } from "@/api/mpin.api";
 
 interface Props {
   visible: boolean;

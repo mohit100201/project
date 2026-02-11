@@ -9,8 +9,8 @@ import { useBranding } from '@/context/BrandingContext';
 import { Hourglass, ShieldCheck, ChevronRight, Building2 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
 import { getLatLong } from "@/utils/location";
-import { getBankItKycStatusApi, Pipe } from "../api/service.api"; // Ensure Pipe is exported from your service
-import { apiClient } from "../api/api.client";
+import { getBankItKycStatusApi, Pipe } from "../../api/service.api"; // Ensure Pipe is exported from your service
+import { apiClient } from "../../api/api.client";
 import { useRouter } from "expo-router";
 
 const { AepsModule } = NativeModules;
@@ -33,9 +33,7 @@ export default function AepsScreen() {
   }, []);
 
   useEffect(() => {
-  console.log("NativeModules =>", NativeModules);
-  console.log("AepsModule =>", NativeModules?.AepsModule);
-  console.log("startAeps =>", NativeModules?.AepsModule?.startAeps);
+ 
 }, []);
 
 
@@ -56,7 +54,7 @@ export default function AepsScreen() {
 
       if (res.success) {
         setKycStatus(res.data.status);
-        console.log("==status==", res)
+       
         // Fix: Use Type Narrowing for Approved status
         if (res.data.status === "Approved") {
           setAgentCode(res.data.agentCode || "");
@@ -108,7 +106,7 @@ export default function AepsScreen() {
 
     const parsed = JSON.parse(response);
 
-    console.log("==AEPS RESULT==", parsed);
+    
 
     Toast.show({
       type: "success",
@@ -117,7 +115,7 @@ export default function AepsScreen() {
     });
 
   } catch (e: any) {
-    console.log("==AEPS ERROR==", e);
+    
 
     Toast.show({
       type: "error",

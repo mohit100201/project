@@ -25,7 +25,7 @@ import { useBranding } from '@/context/BrandingContext';
 
 import { theme } from "@/theme";
 import { getLatLong } from "@/utils/location";
-import { updateProfileApi } from "@/app/api/profile.api";
+import { updateProfileApi } from "@/api/profile.api";
 
 interface Props {
   visible: boolean;

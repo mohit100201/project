@@ -33,11 +33,11 @@ import { AnimatedCard } from "@/components/animated/AnimatedCard";
 import { useAuth } from "@/context/AuthContext";
 
 import { getLatLong } from "@/utils/location";
-import { logoutApi } from "../api/auth.api";
-import { getProfileApi, uploadProfilePhotoApi } from "../api/profile.api";
+import { logoutApi } from "../../api/auth.api";
+import { getProfileApi, uploadProfilePhotoApi } from "../../api/profile.api";
 import { EditProfileModal } from "@/components/ui/EditProfileModal";
 import { SetupMPINModal } from "@/components/ui/MPINModal";
-import { sendMpinOtpApi } from "../api/mpin.api";
+import { sendMpinOtpApi } from "../../api/mpin.api";
 import { ActivityIndicator } from "react-native";
 
 interface MenuItem {

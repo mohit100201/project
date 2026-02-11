@@ -35,7 +35,7 @@ import {
     getAdminQrsApi,
     GetAdminBanksOptions,
     fetchBankListApi,
-} from "../api/funds.api";
+} from "../../api/funds.api";
 import DropDownPicker from "react-native-dropdown-picker";
 import DateTimePicker from "@react-native-community/datetimepicker";
 import * as DocumentPicker from "expo-document-picker";
@@ -113,7 +113,6 @@ const RequestFunds = () => {
                 size: file.size,
             });
 
-            console.log("Uploaded file:", file);
         } catch (error) {
             console.error("Document upload failed:", error);
         }
@@ -155,7 +154,6 @@ const RequestFunds = () => {
             };
 
             const response = await fetchBankListApi(options);
-            console.log("==res==", response)
 
 
             if (response.success && Array.isArray(response.data.bank_list)) {
@@ -170,7 +168,6 @@ const RequestFunds = () => {
                         value: bank.bankCode,
                     }));
 
-                console.log("==filter bank==", filteredBanks)
 
                 setBankList(filteredBanks);
             }

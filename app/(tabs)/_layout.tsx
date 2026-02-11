@@ -7,7 +7,7 @@ import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
 import { getLatLong } from '@/utils/location';
-import { getKycStatusApi } from '../api/kyc.api';
+import { getKycStatusApi } from '../../api/kyc.api';
 import * as Linking from 'expo-linking';
 import { useAuth } from '@/context/AuthContext';
 import * as Application from 'expo-application';

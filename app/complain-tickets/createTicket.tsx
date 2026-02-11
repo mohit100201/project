@@ -11,7 +11,7 @@ import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
 import { getLatLong } from "@/utils/location";
 import Toast from "react-native-toast-message";
-import { createTicketApi } from "../api/complaintsTickets.api";
+import { createTicketApi } from "../../api/complaintsTickets.api";
 import CustomInput from "@/components/ui/CustomInput";
 import CustomDropdown from "@/components/ui/CustomDropdown";
 

@@ -8,9 +8,9 @@ import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'rea
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
-import { doPayoutTransferApi, getActiveRecipientsApi, getPaymentMethodsApi } from '../api/payout.api'
+import { doPayoutTransferApi, getActiveRecipientsApi, getPaymentMethodsApi } from '../../api/payout.api'
 import Toast from 'react-native-toast-message'
-import { getProfileApi } from '../api/profile.api'
+import { getProfileApi } from '../../api/profile.api'
 import { useLocalSearchParams } from 'expo-router'
 
 interface BeneficiaryData {
@@ -194,7 +194,6 @@ const RequestPayout = () => {
             return;
         }
 
-        console.log("==transferModevalue==",transferModeValue)
 
         // 2. Exact Postman Mapping
         const payload = {
@@ -211,7 +210,6 @@ const RequestPayout = () => {
         };
 
         // DEBUG: Check this log in your terminal to see if it matches Postman exactly
-        console.log("FINAL PAYLOAD:", JSON.stringify(payload, null, 2));
 
         const res = await doPayoutTransferApi({
             token,
@@ -226,7 +224,6 @@ const RequestPayout = () => {
         } else {
             // Check for Laravel-style validation errors object
             const detailedError = res.errors ? Object.values(res.errors).flat().join(", ") : res.message;
-            console.log("API REJECTION:", res);
             Toast.show({ type: 'error', text1: 'Validation Failed', text2: detailedError });
         }
     } catch (error: any) {

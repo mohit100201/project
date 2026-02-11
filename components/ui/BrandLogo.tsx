@@ -16,7 +16,6 @@ export const BrandedLogo = ({
   style,
 }: BrandedLogoProps) => {
   const { logoUrl } = useBranding();
-  console.log("logoURl",logoUrl)
 
   const source = { uri: logoUrl }
 

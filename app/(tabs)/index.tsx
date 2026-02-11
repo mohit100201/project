@@ -10,15 +10,15 @@ import { useAuth } from '@/context/AuthContext';
 import { AnimatedCard } from '@/components/animated/AnimatedCard';
 import { getLatLong } from '@/utils/location';
 import * as SecureStore from "expo-secure-store";
-import { getTransactionsApi } from '../api/transaction.api';
+import { getTransactionsApi } from '../../api/transaction.api';
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
 import Toast from 'react-native-toast-message';
 import { createShimmerPlaceholder } from "react-native-shimmer-placeholder";
 import { Link, router } from 'expo-router';
-import { getServicesApi } from '../api/service.api';
-import { getProfileApi } from '../api/profile.api';
-import { getWalletBalanceApi } from '../api/balance.api';
+import { getServicesApi } from '../../api/service.api';
+import { getProfileApi } from '../../api/profile.api';
+import { getWalletBalanceApi } from '../../api/balance.api';
 import { ServiceItem } from './services';
 import { VALID_ROUTES } from '@/utils/routes';
 
@@ -155,7 +155,7 @@ export default function HomeScreen() {
         perPage: 5,
       });
 
-      console.log("==services==", res)
+     
 
       if (res.success) {
         setServices(res.data.items || []);
@@ -186,15 +186,13 @@ export default function HomeScreen() {
         longitude: location.longitude,
         token,
       });
-      console.log("hello")
-
-      console.log("res",res)
+     
 
       if (res.success) {
         setProfileData(res.data);
       }
     } catch (err: any) {
-      console.log(":errre")
+      
       Toast.show({
         type: "error",
         text1: "Failed to fetch profile",

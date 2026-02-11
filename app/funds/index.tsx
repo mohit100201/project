@@ -29,7 +29,7 @@ import * as SecureStore from "expo-secure-store";
 import { getLatLong } from "@/utils/location";
 import { theme } from "@/theme";
 import { AnimatedCard } from "@/components/animated/AnimatedCard";
-import { getFundRequestsApi } from "../api/funds.api";
+import { getFundRequestsApi } from "../../api/funds.api";
 import { router } from "expo-router";
 import FundCardSkeleton from "@/components/shimmer/FundCardSkeleton";
 // Import your new separate skeleton component

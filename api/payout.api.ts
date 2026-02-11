@@ -88,7 +88,7 @@ export const getPayoutHistoryApi = async (options: {
     per_page: options.params.per_page.toString(),
   }).toString();
 
-  console.log("==query==",query);
+
 
   return apiClient({
     endpoint: `/payouts?${query}`,

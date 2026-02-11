@@ -7,7 +7,7 @@ import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
 import { useCallback, useEffect, useState } from 'react';
 import { getLatLong } from "@/utils/location";
-import { getTicketsApi } from "../api/complaintsTickets.api";
+import { getTicketsApi } from "../../api/complaintsTickets.api";
 import TicketSkeleton from "@/components/shimmer/TicketSkeleton";
 
 

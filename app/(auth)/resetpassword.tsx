@@ -20,7 +20,7 @@ import Constants from 'expo-constants';
 import { useBranding } from '@/context/BrandingContext';
 import { BrandedLogo } from '@/components/ui/BrandLogo';
 import { getLatLong } from '@/utils/location';
-import { resetPasswordApi } from '../api/auth.api';
+import { resetPasswordApi } from '../../api/auth.api';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
 

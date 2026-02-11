@@ -30,10 +30,10 @@ import {
 } from 'lucide-react-native';
 
 // Local Imports
-import { kycSchema, KYCFormData } from './formSchema';
+import { kycSchema, KYCFormData } from '../../utils/formSchema';
 import { city } from '../../utils/data';
 import { getLatLong } from '@/utils/location';
-import { apiClient } from '../api/api.client';
+import { apiClient } from '../../api/api.client';
 
 type AddressPath = "address1" | "address2" | "address3";
 
@@ -116,7 +116,7 @@ const KYCForm = ({ onSubmissionSuccess }: OnboardingFormProps) => {
       const token = await SecureStore.getItemAsync("userToken");
       const userRaw = await SecureStore.getItemAsync("userData");
       const userId = userRaw ? JSON.parse(userRaw).id : "70"; 
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+      
 
       const formData = new FormData();
 
@@ -158,7 +158,7 @@ const KYCForm = ({ onSubmissionSuccess }: OnboardingFormProps) => {
         method: "POST",
         body: formData,
         headers: {
-          domain: domainName,
+          
           latitude: String(location?.latitude || "0.0"),
           longitude: String(location?.longitude || "0.0"),
           Authorization: `Bearer ${token}`,

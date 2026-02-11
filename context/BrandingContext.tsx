@@ -3,7 +3,7 @@ import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { Image } from 'react-native';
 import * as SecureStore from "expo-secure-store";
-import { setApiHeaders } from '@/app/api/api.header';
+import { setApiHeaders } from '@/api/api.header';
 
 type BrandingState = {
   logoUrl: string | null;
@@ -38,7 +38,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // Otherwise, try to infer tenant by the installed application name
         // const appName = (Application.applicationName || '').toString().trim();
         const appName = "pinepe";
-        console.log("appName", appName)
+       
         if (!appName) {
           setLoading(false);
           return;
@@ -47,10 +47,10 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
         // Fetch tenant list and match by name / unique_id (case-insensitive)
         const token = "346|y1Jka32RNDwMg1gGkNGAhO1txb319kghZkkIqfiHf5049b46";
-        console.log("token")
+        
         const res = await fetch(TENANTS_API, { headers: { Accept: 'application/json', 'Authorization': `Bearer ${token}`, } });
         const json = await res.json();
-        console.log("json", json)
+       
         if (json?.data?.items && Array.isArray(json.data.items)) {
           const key = appName.toLowerCase();
           const found = json.data.items.find((t: any) => {
@@ -61,7 +61,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             );
           });
 
-          console.log("found", found)
+          
 
           if (found) {
             setTenant(found);

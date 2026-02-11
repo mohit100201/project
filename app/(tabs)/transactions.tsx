@@ -24,7 +24,7 @@ import { getLatLong } from "@/utils/location";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
 import * as SecureStore from "expo-secure-store";
-import { getTransactionsApi } from "../api/transaction.api";
+import { getTransactionsApi } from "../../api/transaction.api";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { TransactionDetailsModal } from "@/components/ui/TransactionDetailModal";
 import { TransactionFilterModal } from "@/components/ui/TransactionFilterModal";
@@ -112,7 +112,7 @@ export default function TransactionsScreen() {
       }
 
       const payload: any = {
-        domain: brandingDomain !,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token: userToken.current,
@@ -131,7 +131,7 @@ export default function TransactionsScreen() {
       const res = await getTransactionsApi(payload);
 
       if (res.success) {
-        console.log("==item==", res.data.items);
+        
         const newItems = res.data.items || [];
         setTransactions(prev => {
           if (targetPage === 1) return newItems;

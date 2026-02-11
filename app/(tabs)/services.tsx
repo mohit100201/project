@@ -18,7 +18,7 @@ import { useRouter } from "expo-router";
 import { theme } from "@/theme";
 import { AnimatedCard } from "@/components/animated/AnimatedCard";
 import { getLatLong } from "@/utils/location";
-import { getServicesApi } from "../api/service.api";
+import { getServicesApi } from "../../api/service.api";
 import { ServiceCardSkeleton } from "@/components/shimmer/ServiceCardSkeleton";
 import { VALID_ROUTES } from "@/utils/routes";
 
@@ -74,7 +74,7 @@ export default function ServicesScreen() {
       }
 
       const token = await SecureStore.getItemAsync("userToken");
-      console.log("==token==", token)
+     
 
       const json = await getServicesApi({
        
@@ -84,7 +84,7 @@ export default function ServicesScreen() {
         status: "active",
         perPage: 50,
       });
-      console.log("==service==", json)
+      
       setServices(json.data.items || []);
 
     } catch (err: any) {

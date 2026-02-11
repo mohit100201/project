@@ -24,7 +24,7 @@ import Toast from 'react-native-toast-message'; // Import Toast
 import { theme } from '@/theme';
 import { AnimatedButton } from '@/components/animated/AnimatedButton';
 import { getLatLong } from '@/utils/location';
-import { verifyOtpApi } from '../api/auth.api';
+import { verifyOtpApi } from '../../api/auth.api';
 import Constants from 'expo-constants';
 import { useBranding } from '@/context/BrandingContext';
 
@@ -191,7 +191,7 @@ export default function OTPScreen() {
             JSON.stringify(json.data.user)
           );
         }
-        console.log("==token==",json.data?.access_token);
+       
         router.replace("/(tabs)");
       } else {
         router.replace({

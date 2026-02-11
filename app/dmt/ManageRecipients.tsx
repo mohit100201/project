@@ -22,7 +22,7 @@ import { theme } from "@/theme";
 import { getLatLong } from '@/utils/location';
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
-import { addRecipientApi, deleteRecipientApi, fetchDmtRecipientsApi, getDmtTransactionOTP, transferDmtAmount } from "../api/dmt.api";
+import { addRecipientApi, deleteRecipientApi, fetchDmtRecipientsApi, getDmtTransactionOTP, transferDmtAmount } from "../../api/dmt.api";
 import Toast from "react-native-toast-message";
 import DmtTransferModal from "@/components/ui/DmtTransferModal";
 import CreateRecipientModal from "@/components/ui/CreateRecipientModal";
@@ -79,7 +79,7 @@ export default function ManageRecipients({
         customerId: customerNumber,
       });
 
-      console.log("==Recipients API Response==", res);
+     
 
       // ✅ SUCCESS & DATA MAPPING
       if (
@@ -199,7 +199,6 @@ export default function ManageRecipients({
         clientRefId,
       });
 
-      console.log("==DMT TRANSFER RES==", res);
 
       if (res.success && res.data?.errorCode === "00") {
         Toast.show({
@@ -249,7 +248,6 @@ export default function ManageRecipients({
       customerId: customerNumber,   
     };
 
-    console.log("Sending Payload:", payload);
 
     // 3. Call the API
     const response = await addRecipientApi(payload);

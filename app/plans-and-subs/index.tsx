@@ -4,13 +4,13 @@ import { View, Text, FlatList, ActivityIndicator, StyleSheet, TouchableOpacity }
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
-import { getAllPlansApi, getAssignedPlanApi, upgradePlanApi } from '../api/plansAndSubs.api';
+import { getAllPlansApi, getAssignedPlanApi, upgradePlanApi } from '../../api/plansAndSubs.api';
 import Toast from 'react-native-toast-message';
 import { Ionicons } from '@expo/vector-icons'; // Ensure you have expo-vector-icons installed
 import { PlansSkeleton } from '@/components/shimmer/PlansSkeleton';
 import { useLocalSearchParams } from "expo-router";
 import { theme } from '@/theme';
-import { confirmMpinApi } from '../api/mpin.api';
+import { confirmMpinApi } from '../../api/mpin.api';
 import { MpinVerificationModal } from '@/components/ui/CustomMPINModal';
 
 
@@ -96,7 +96,6 @@ const [isKycDone, setIsKycDone] = useState(false);
         setAllPlans(allPlansRes.data);
       }
 
-      // console.log("==assignedPlansRes==",assignedPlanRes)
 
       if (assignedPlanRes.success) {
 

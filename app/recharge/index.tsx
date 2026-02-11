@@ -37,8 +37,8 @@ import { useBranding } from '@/context/BrandingContext';
 // Internal Imports
 import { operators } from "@/utils/operators";
 import { getLatLong } from "@/utils/location";
-import { checkMobilePlansApi, checkOperatorApi, checkROffersApi, rechargeRequestApi } from "../api/recharge.api";
-import { confirmMpinApi } from "../api/mpin.api";
+import { checkMobilePlansApi, checkOperatorApi, checkROffersApi, rechargeRequestApi } from "../../api/recharge.api";
+import { confirmMpinApi } from "../../api/mpin.api";
 
 /* ---------------- ANIMATED MODAL COMPONENT ---------------- */
 const CustomModal = ({ visible, onClose, title, subtitle, children, height = '70%' }: any) => {
@@ -160,7 +160,6 @@ export default function RechargeScreen() {
                 token: token || "",
             });
 
-            console.log("Operator detial",res)
 
 
             if (res.success && res.data?.data?.Operator) {
@@ -177,7 +176,6 @@ export default function RechargeScreen() {
                     setCircle(res.data.data.Circle || "India");
                     setCircleCode(res.data.data.circleCode || "00")
                     setOperatorCode(res.data.data.OpCode);
-                    console.log("==res==", res)
 
 
 
@@ -228,7 +226,7 @@ export default function RechargeScreen() {
 
 
     const handleFetchPlans = async () => {
-        console.log("hii")
+      
         if (!operator || !circle) {
             Toast.show({ type: "error", text1: "Please select operator first" });
             return;
@@ -239,7 +237,6 @@ export default function RechargeScreen() {
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
            
-            console.log("==circle code==", circleCode)
             const res = await checkMobilePlansApi({
                 operator_code: operatorCode,
                 circle: circleCode, // Matches your API parameter

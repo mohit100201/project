@@ -25,7 +25,7 @@ import {
   ChevronRight,
 } from "lucide-react-native";
 import Toast from "react-native-toast-message";
-import { createSenderApi, requestSenderOtpApi } from "../api/dmt.api";
+import { createSenderApi, requestSenderOtpApi } from "../../api/dmt.api";
 import { getLatLong } from "@/utils/location";
 
 // Asset Imports - Ensure these paths are correct for your project
@@ -118,7 +118,6 @@ export default function SenderDetailsForm({
       });
 
       const pidXml: string = await MantraRD.captureFingerprint();
-      console.log("==MANTRA PID XML==", pidXml);
 
       if (!pidXml || !pidXml.includes("<PidData")) {
         Toast.show({

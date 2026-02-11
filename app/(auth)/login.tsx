@@ -18,7 +18,7 @@ import { AnimatedInput } from '@/components/animated/AnimatedInput';
 import { AnimatedButton } from '@/components/animated/AnimatedButton';
 import { BrandedLogo } from '@/components/ui/BrandLogo';
 import * as Location from "expo-location";
-import { loginApi } from '../api/auth.api';
+import { loginApi } from '../../api/auth.api';
 import { getLatLong } from '@/utils/location';
 
 
@@ -39,7 +39,7 @@ export default function LoginScreen() {
  
   const handleLogin = async () => {
     setError("");
-    console.log("inside login")
+
 
     if (!identifier.trim() || !password) {
       Toast.show({

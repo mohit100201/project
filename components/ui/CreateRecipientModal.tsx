@@ -25,7 +25,7 @@ import { theme } from "@/theme";
 import CustomInput from "./CustomInput";
 import CustomDropdown from "./CustomDropdown";
 import { getLatLong } from "@/utils/location";
-import { fetchBankListApi } from "@/app/api/funds.api";
+import { fetchBankListApi } from "@/api/funds.api";
 
 /* ================= TYPES ================= */
 
@@ -57,7 +57,6 @@ export default function CreateRecipientModal({
   selectedPipe,
 }: Props) {
   const translateY = useSharedValue(700);
-  console.log("==selected pipe==",selectedPipe)
   const [name, setName] = useState("");
   const [mobile, setMobile] = useState("");
   const [bank, setBank] = useState<string | null>(null);
@@ -84,7 +83,7 @@ export default function CreateRecipientModal({
         payload: {},
       });
 
-      console.log("==Bank List==",bankList)
+     
 
       if (response?.success && Array.isArray(response?.data?.bank_list)) {
         const banks: DropdownItem[] = response.data.bank_list.map((bank: any) => ({

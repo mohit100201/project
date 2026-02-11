@@ -19,7 +19,7 @@ import { theme } from '@/theme';
 import { AnimatedInput } from '@/components/animated/AnimatedInput';
 import { AnimatedButton } from '@/components/animated/AnimatedButton';
 import { BrandedLogo } from '@/components/ui/BrandLogo';
-import { registerApi } from '../api/auth.api';
+import { registerApi } from '../../api/auth.api';
 import { getLatLong } from '@/utils/location';
 
 const { height: WINDOW_HEIGHT } = Dimensions.get('window');
@@ -130,7 +130,7 @@ export default function SignupScreen() {
       password_confirmation: passwordConfirmation,
     };
 
-    const res = await registerApi(
+    const json = await registerApi(
       {
         name: fullName,
         email: email,
@@ -145,9 +145,11 @@ export default function SignupScreen() {
         longitude: location.longitude,
       }
     );
-    const json=await res.json()
 
-    console.log("SignUp response",json)
+    
+    
+
+   
 
 
 

@@ -10,7 +10,7 @@ import { getLatLong } from '@/utils/location';
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
-import { getPayoutHistoryApi } from '../api/payout.api';
+import { getPayoutHistoryApi } from '../../api/payout.api';
 
 const SendPayoutScreen = () => {
     const [fromDate, setFromDate] = useState("")
@@ -64,7 +64,6 @@ const SendPayoutScreen = () => {
                 },
             });
 
-            console.log("==res==",res)
 
             if (res.success) {
                 const apiData = res.data?.data || res.data?.items || res.data || [];

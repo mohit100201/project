@@ -14,7 +14,7 @@ import { User, Smartphone, Search, RefreshCcw } from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 import Toast from "react-native-toast-message";
 import { getLatLong } from "@/utils/location";
-import { fetchDmtSenderApi } from "../api/dmt.api";
+import { fetchDmtSenderApi } from "../../api/dmt.api";
 import SenderDetailsForm from "./SenderDetailsForm";
 import ManageRecipients from "./ManageRecipients";
 
@@ -67,7 +67,7 @@ export default function DMTScreen() {
         customerId: customerNumber,
       });
 
-      console.log("==DMTSENDERAPI==",res)
+     
 
       if (res.success) {
         const code = res.data?.raw?.errorCode;
