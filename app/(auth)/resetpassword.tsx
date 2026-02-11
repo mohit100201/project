@@ -34,8 +34,8 @@ export default function ResetPasswordScreen() {
     const [showConfirmPassword, setShowConfirmPassword] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const { domainName: brandingDomain } = useBranding();
-    const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+     
+
 
     const handleResetPassword = async () => {
         if (!password || !confirmPassword) {
@@ -80,7 +80,7 @@ export default function ResetPasswordScreen() {
                     new_password_confirmation: confirmPassword,
                 },
                 {
-                    domain: domainName,
+                    
                     latitude: location.latitude,
                     longitude: location.longitude,
                 }

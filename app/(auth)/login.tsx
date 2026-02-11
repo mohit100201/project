@@ -35,9 +35,8 @@ export default function LoginScreen() {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
 
-  const { domainName } = useBranding();
-  const domain = domainName || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
-
+  
+ 
   const handleLogin = async () => {
     setError("");
     console.log("inside login")
@@ -71,7 +70,7 @@ export default function LoginScreen() {
           password,
         },
         {
-          domain: domain,
+          
           latitude: location.latitude,
           longitude: location.longitude,
         }

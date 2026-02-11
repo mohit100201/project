@@ -53,8 +53,8 @@ export default function ServicesScreen() {
 
   const router = useRouter();
 
-  const { domainName: brandingDomain } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+   
+ 
 
   /* ===========================
       FETCH SERVICES
@@ -77,7 +77,7 @@ export default function ServicesScreen() {
       console.log("==token==", token)
 
       const json = await getServicesApi({
-        domain: domainName,
+       
         latitude: location.latitude,
         longitude: location.longitude,
         token: token!,

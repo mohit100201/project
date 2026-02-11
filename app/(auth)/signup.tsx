@@ -48,8 +48,8 @@ export default function SignupScreen() {
   const [loading, setLoading] = useState(false);
 
   // Domain configuration
-  const { domainName: brandingDomain } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+   
+  
 
   const addIndiaCountryCode = (phone: string): string => {
     if (!phone) return "";
@@ -130,17 +130,7 @@ export default function SignupScreen() {
       password_confirmation: passwordConfirmation,
     };
 
-
-
-    const meta = {
-      domain: domainName,
-      latitude: location.latitude,
-      longitude: location.longitude,
-    };
-
-  
-
-    const json = await registerApi(
+    const res = await registerApi(
       {
         name: fullName,
         email: email,
@@ -150,11 +140,14 @@ export default function SignupScreen() {
         password_confirmation: passwordConfirmation,
       },
       {
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
       }
     );
+    const json=await res.json()
+
+    console.log("SignUp response",json)
 
 
 

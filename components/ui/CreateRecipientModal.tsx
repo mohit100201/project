@@ -69,8 +69,7 @@ export default function CreateRecipientModal({
   const [bankOpen, setBankOpen] = useState(false);
   const [pipeOpen, setPipeOpen] = useState(false);
 
-  const { domainName: brandingDomain, tenant } = useBranding();
-  const domain = brandingDomain || "laxmeepay.com";
+ 
 
   const loadBankList = useCallback(async () => {
     try {
@@ -79,7 +78,6 @@ export default function CreateRecipientModal({
       if (!location || !token) return;
 
       const response = await fetchBankListApi({
-        domain,
         token,
         latitude: String(location.latitude),
         longitude: String(location.longitude),
@@ -98,7 +96,7 @@ export default function CreateRecipientModal({
     } catch (err) {
       console.error("Bank list fetch failed:", err);
     }
-  }, [domain]);
+  }, []);
 
   useEffect(() => {
     if (visible) loadBankList();

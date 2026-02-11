@@ -28,8 +28,8 @@ const SendPayoutScreen = () => {
     const [loading, setLoading] = useState(false);
     const [refreshing, setRefreshing] = useState(false);
 
-    const { domainName: brandingDomain } = useBranding();
-    const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+     
+    
 
     // helper to format date for API (YYYY-MM-DD)
     const formatDateForApi = (dateStr: string) => {
@@ -53,7 +53,6 @@ const SendPayoutScreen = () => {
 
             const res = await getPayoutHistoryApi({
                 token,
-                domain: domainName,
                 latitude: location.latitude,
                 longitude: location.longitude,
                 params: {

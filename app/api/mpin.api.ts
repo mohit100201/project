@@ -1,7 +1,7 @@
 import { apiClient } from "./api.client";
 
 export const sendMpinOtpApi = async (options: {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -10,7 +10,7 @@ export const sendMpinOtpApi = async (options: {
     endpoint: "/users/mpin/otp",
     method: "POST",
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -20,7 +20,7 @@ export const sendMpinOtpApi = async (options: {
 };
 
 export const setMpinApi = async (options: {
-  domain: string;
+ 
   latitude: string;
   longitude: string;
   token: string;
@@ -31,7 +31,7 @@ export const setMpinApi = async (options: {
     endpoint: "/users/mpin",
     method: "POST",
     headers: {
-      domain: options.domain,
+     
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -44,7 +44,7 @@ export const setMpinApi = async (options: {
 };
 
 export const confirmMpinApi = async (options: {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -54,7 +54,7 @@ export const confirmMpinApi = async (options: {
     endpoint: "/confirm-mpin",
     method: "POST",
     headers: {
-      domain: options.domain,
+     
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,

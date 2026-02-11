@@ -22,7 +22,7 @@ const CreateTicket = () => {
     const [open, setOpen] = useState(false);
     const [loading, setLoading] = useState(false);
 
-    const { domainName: brandingDomain } = useBranding();
+     
 
     const priorities = [
         { label: "Low Priority", value: "low" },
@@ -40,13 +40,12 @@ const CreateTicket = () => {
             setLoading(true);
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
-            const domain = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+           
 
             const res = await createTicketApi({
                 subject,
                 description,
                 priority,
-                domain,
                 latitude: location?.latitude?.toString() || "0",
                 longitude: location?.longitude?.toString() || "0",
                 token: token || "",

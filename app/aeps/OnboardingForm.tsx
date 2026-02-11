@@ -51,7 +51,7 @@ const KYCForm = ({ onSubmissionSuccess }: OnboardingFormProps) => {
     mode: 'onTouched',
   });
 
-  const { domainName: brandingDomain } = useBranding();
+   
 
   const states = Object.keys(city).sort();
 

@@ -1,7 +1,7 @@
 import { apiClient } from "./api.client";
 
 export const getAllPlansApi = async (options: {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string; 
@@ -10,7 +10,6 @@ export const getAllPlansApi = async (options: {
     endpoint: "/plans",
     method: "GET",
     headers: {
-      domain: options.domain,
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`, 
@@ -20,7 +19,7 @@ export const getAllPlansApi = async (options: {
 
 export const getAssignedPlanApi = async (options: {
   user_id: string | number;
-  domain: string;
+ 
   latitude: string;
   longitude: string;
   token: string;
@@ -29,7 +28,6 @@ export const getAssignedPlanApi = async (options: {
     endpoint: `/plan/assigned?user_id=${options.user_id}`,
     method: "GET",
     headers: {
-      domain: options.domain,
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -45,7 +43,7 @@ export const getAssignedPlanApi = async (options: {
 export const upgradePlanApi = async (options: {
   user_id: string | number;
   plan_id: string | number;
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -54,7 +52,6 @@ export const upgradePlanApi = async (options: {
     endpoint: "/plan/upgrade",
     method: "POST",
     headers: {
-      domain: options.domain,
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,

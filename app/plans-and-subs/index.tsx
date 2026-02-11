@@ -17,8 +17,8 @@ import { MpinVerificationModal } from '@/components/ui/CustomMPINModal';
 const MyPlans = () => {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const [plansLoading, setPlansLoading] = useState(false);
-  const { domainName: brandingDomain } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+   
+  
   const [allPlans, setAllPlans] = useState([]);
   const [assignedPlan, setAssignedPlan] = useState<any>(null);
   const [showMpin, setShowMpin] = useState(false);
@@ -39,7 +39,6 @@ const [isKycDone, setIsKycDone] = useState(false);
       const res = await upgradePlanApi({
         user_id: userId,
         plan_id: selectedPlan.id,
-        domain: domainName,
         latitude: location?.latitude?.toString() || "0",
         longitude: location?.longitude?.toString() || "0",
         token: token || "",
@@ -81,14 +80,12 @@ const [isKycDone, setIsKycDone] = useState(false);
       // Call both APIs simultaneously
       const [allPlansRes, assignedPlanRes] = await Promise.all([
         getAllPlansApi({
-          domain: domainName,
           latitude: location.latitude.toString(),
           longitude: location.longitude.toString(),
           token,
         }),
         getAssignedPlanApi({
           user_id: userId,
-          domain: domainName,
           latitude: location.latitude.toString(),
           longitude: location.longitude.toString(),
           token,

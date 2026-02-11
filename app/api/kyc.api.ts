@@ -1,7 +1,7 @@
 import { apiClient } from "./api.client";
 
 export const getKycStatusApi = async (options: {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -10,7 +10,7 @@ export const getKycStatusApi = async (options: {
     endpoint: "/kyc/status",
     method: "GET",
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,

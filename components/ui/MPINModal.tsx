@@ -36,8 +36,7 @@ export function SetupMPINModal({ visible, onClose, onSuccess }: Props) {
   const translateY = useSharedValue(500);
   const shake = useSharedValue(0);
 
-  const { domainName: brandingDomain, tenant } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+  
 
   const [otp, setOtp] = useState("");
   const [mpin, setMpin] = useState("");
@@ -101,7 +100,7 @@ export function SetupMPINModal({ visible, onClose, onSuccess }: Props) {
       if (!location || !token) return;
 
       const res = await setMpinApi({
-        domain: domainName,
+       
         latitude: location.latitude,
         longitude: location.longitude,
         token,

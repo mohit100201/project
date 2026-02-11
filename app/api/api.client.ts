@@ -1,6 +1,7 @@
 // src/api/api.client.ts
 
 import { API_CONFIG } from "./api.config";
+import { getApiHeaders } from "./api.header";
 
 type ApiRequestOptions = {
   endpoint: string;
@@ -41,6 +42,7 @@ export const apiClient = async ({
     method,
     headers: {
       ...API_CONFIG.DEFAULT_HEADERS,
+      ...getApiHeaders(),
       ...(isFormData ? {} : { "Content-Type": "application/json" }),
       ...headers,
     },

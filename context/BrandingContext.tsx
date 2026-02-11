@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import * as Application from 'expo-application';
 import { Image } from 'react-native';
 import * as SecureStore from "expo-secure-store";
+import { setApiHeaders } from '@/app/api/api.header';
 
 type BrandingState = {
   logoUrl: string | null;
@@ -32,24 +33,24 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   useEffect(() => {
     const init = async () => {
       try {
-        
+
 
         // Otherwise, try to infer tenant by the installed application name
-        const appName = (Application.applicationName || '').toString().trim();
-        // const appName = "cashpe";
-        console.log("appName",appName)
+        // const appName = (Application.applicationName || '').toString().trim();
+        const appName = "pinepe";
+        console.log("appName", appName)
         if (!appName) {
           setLoading(false);
           return;
         }
-        
+
 
         // Fetch tenant list and match by name / unique_id (case-insensitive)
         const token = "346|y1Jka32RNDwMg1gGkNGAhO1txb319kghZkkIqfiHf5049b46";
         console.log("token")
-        const res = await fetch(TENANTS_API, { headers: { Accept: 'application/json' ,'Authorization': `Bearer ${token}`,} });
+        const res = await fetch(TENANTS_API, { headers: { Accept: 'application/json', 'Authorization': `Bearer ${token}`, } });
         const json = await res.json();
-        console.log("json",json)
+        console.log("json", json)
         if (json?.data?.items && Array.isArray(json.data.items)) {
           const key = appName.toLowerCase();
           const found = json.data.items.find((t: any) => {
@@ -60,23 +61,29 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
             );
           });
 
-          console.log("found",found)
+          console.log("found", found)
 
           if (found) {
             setTenant(found);
-            console.log("tenant",found)
-            setDomainName(found.domain || null);
-            // attempt to prefetch the image to warm the cache; if fails, still set the URL
+
+            const domain = found.domain || null;
+            setDomainName(domain);
+
+            if (domain) {
+              setApiHeaders({
+                domain,
+              });
+            }
+
             const photo = found.photo || null;
             if (photo) {
               try {
                 await Image.prefetch(photo);
-              } catch (e) {
-                // ignore prefetch errors
-              }
+              } catch { }
             }
             setLogoUrl(photo);
           }
+
         }
       } catch (err) {
         console.warn('Branding init failed:', err);

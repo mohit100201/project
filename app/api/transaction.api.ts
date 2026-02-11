@@ -2,7 +2,7 @@ import { apiClient } from "./api.client";
 
 type GetTransactionsOptions = {
   token: string;
-  domain: string;
+
   latitude: string;
   longitude: string;
 
@@ -54,7 +54,7 @@ export const getTransactionsApi = async (
     method: "GET",
     headers: {
       Authorization: `Bearer ${options.token}`,
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
     },

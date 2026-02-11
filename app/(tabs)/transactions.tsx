@@ -58,7 +58,7 @@ export default function TransactionsScreen() {
   const [isSearchActive, setIsSearchActive] = useState(false);
   const tabBarHeight = useBottomTabBarHeight();
 
-  const { domainName: brandingDomain } = useBranding();
+   
 
 
   const [page, setPage] = useState(1);
@@ -112,7 +112,7 @@ export default function TransactionsScreen() {
       }
 
       const payload: any = {
-        domain: brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com",
+        domain: brandingDomain !,
         latitude: location.latitude,
         longitude: location.longitude,
         token: userToken.current,

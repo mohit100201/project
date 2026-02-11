@@ -59,8 +59,8 @@ export default function ProfileScreen() {
   const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [showSetupMPIN, setShowSetupMPIN] = useState(false);
-  const { domainName: brandingDomain } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+   
+  
   const [mpinLoading, setMpinLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
 
@@ -79,7 +79,7 @@ export default function ProfileScreen() {
       if (!location || !token) return;
 
       const res = await getProfileApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -129,7 +129,7 @@ export default function ProfileScreen() {
       if (!location || !token) return;
 
       const res = await uploadProfilePhotoApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -194,7 +194,7 @@ export default function ProfileScreen() {
       }
 
       const res = await sendMpinOtpApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,

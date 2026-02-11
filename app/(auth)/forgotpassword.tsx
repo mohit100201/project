@@ -25,8 +25,8 @@ export default function ForgotPasswordScreen() {
   const [identifier, setIdentifier] = useState('');
   const [loading, setLoading] = useState(false);
 
-  const { domainName: brandingDomain } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+   
+ 
 
   const handleSubmit = async () => {
     if (!identifier.trim()) {
@@ -57,7 +57,7 @@ export default function ForgotPasswordScreen() {
       const json = await forgotPasswordApi(
         { login: identifier },
         {
-          domain: domainName,
+          
           latitude: location.latitude,
           longitude: location.longitude,
         }

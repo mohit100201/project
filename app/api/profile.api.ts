@@ -2,7 +2,7 @@ import { apiClient } from "./api.client";
 
 
 export const getProfileApi = async (options: {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string; 
@@ -11,7 +11,7 @@ export const getProfileApi = async (options: {
     endpoint: "/profile",
     method: "GET",
     headers: {
-      domain: options.domain,
+    
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`, 
@@ -21,7 +21,7 @@ export const getProfileApi = async (options: {
 
 
 export const uploadProfilePhotoApi = async (options: {
-  domain: string;
+ 
   latitude: string;
   longitude: string;
   token: string;
@@ -50,7 +50,7 @@ export const uploadProfilePhotoApi = async (options: {
     method: "POST",
     body: formData,
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -68,7 +68,7 @@ type UpdateProfilePayload = {
 };
 
 export const updateProfileApi = async (options: {
-  domain: string;
+ 
   latitude: string;
   longitude: string;
   token: string;
@@ -80,7 +80,7 @@ export const updateProfileApi = async (options: {
     body: options.payload,
     headers: {
       Authorization: `Bearer ${options.token}`,
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
     },

@@ -1,7 +1,7 @@
 import { apiClient } from "./api.client";
 
 export const getPaymentMethodsApi = async (options: {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -10,7 +10,7 @@ export const getPaymentMethodsApi = async (options: {
     endpoint: "/payment-method",
     method: "GET",
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -20,7 +20,7 @@ export const getPaymentMethodsApi = async (options: {
 
 
 export const getActiveRecipientsApi = async (options: {
-  domain: string;
+ 
   latitude: string;
   longitude: string;
   token: string;
@@ -29,7 +29,7 @@ export const getActiveRecipientsApi = async (options: {
     endpoint: "/recipients/active-list",
     method: "GET",
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -68,7 +68,7 @@ export const doPayoutTransferApi = async (options: {
 
 export const getPayoutHistoryApi = async (options: {
   token: string;
-  domain: string;
+ 
   latitude: string | number;
   longitude: string | number;
   params: {
@@ -94,7 +94,7 @@ export const getPayoutHistoryApi = async (options: {
     endpoint: `/payouts?${query}`,
     method: "GET",
     headers: {
-      domain: options.domain,
+      
       latitude: String(options.latitude),
       longitude: String(options.longitude),
       Authorization: `Bearer ${options.token}`,

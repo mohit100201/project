@@ -8,7 +8,7 @@ import { apiClient } from "./api.client";
 export const getTicketsApi = async (options: {
   page: number;
   per_page: number;
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -18,7 +18,7 @@ export const getTicketsApi = async (options: {
     endpoint: `/tickets?per_page=${options.per_page}&page=${options.page}`,
     method: "GET",
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
       Authorization: `Bearer ${options.token}`,
@@ -31,7 +31,7 @@ export const createTicketApi = async (data: {
   subject: string;
   description: string;
   priority: string;
-  domain: string;
+ 
   latitude: string;
   longitude: string;
   token: string;
@@ -40,7 +40,7 @@ export const createTicketApi = async (data: {
     endpoint: "/tickets",
     method: "POST",
     headers: {
-      domain: data.domain,
+      
       latitude: data.latitude,
       longitude: data.longitude,
       Authorization: `Bearer ${data.token}`,

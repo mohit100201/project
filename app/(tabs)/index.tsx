@@ -63,7 +63,7 @@ export default function HomeScreen() {
   const [servicesLoading, setServicesLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
 
-  const { domainName: brandingDomain } = useBranding();
+   
 
 
   const getGreeting = () => {
@@ -89,12 +89,12 @@ export default function HomeScreen() {
       setTransactionsLoading(true);
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+     
 
       if (!location || !token) return;
 
       const res = await getTransactionsApi({
-        domain: domainName,
+       
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -142,12 +142,12 @@ export default function HomeScreen() {
 
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+      
 
       if (!location || !token) return;
 
       const res = await getServicesApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -177,11 +177,11 @@ export default function HomeScreen() {
 
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+      
       if (!location || !token) return;
 
       const res = await getProfileApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -211,12 +211,12 @@ export default function HomeScreen() {
 
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+     
 
       if (!location || !token) return;
 
       const res = await getWalletBalanceApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,

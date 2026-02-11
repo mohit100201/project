@@ -1,7 +1,7 @@
 import { apiClient } from "./api.client";
 
 type GetServicesOptions = {
-  domain: string;
+
   latitude: string;
   longitude: string;
   token: string;
@@ -13,7 +13,7 @@ type GetServicesOptions = {
 
 export const getServicesApi = async (options: GetServicesOptions) => {
   const {
-    domain,
+   
     latitude,
     longitude,
     token,
@@ -32,7 +32,7 @@ export const getServicesApi = async (options: GetServicesOptions) => {
     endpoint: `/services?${params}`,
     method: "GET",
     headers: {
-      domain,
+   
       latitude,
       longitude,
       Authorization: `Bearer ${token}`,
@@ -42,7 +42,7 @@ export const getServicesApi = async (options: GetServicesOptions) => {
 
 // Define the request parameters (matching your wallet balance logic)
 type GetKycStatusOptions = {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -75,13 +75,13 @@ export type KycStatusResponse = {
 export const getBankItKycStatusApi = async (
   options: GetKycStatusOptions
 ): Promise<KycStatusResponse> => {
-  const { domain, latitude, longitude, token } = options;
+  const {  latitude, longitude, token } = options;
 
   return apiClient({
     endpoint: "/bankit/kyc/status",
     method: "GET",
     headers: {
-      domain,
+     
       latitude,
       longitude,
       Authorization: `Bearer ${token}`,
@@ -90,7 +90,7 @@ export const getBankItKycStatusApi = async (
 };
 
 type SubmitKycOptions = {
-  domain: string;
+  
   latitude: string;
   longitude: string;
   token: string;
@@ -98,7 +98,7 @@ type SubmitKycOptions = {
 };
 
 export const submitKycApi = async (options: SubmitKycOptions) => {
-  const { domain, latitude, longitude, token, formData } = options;
+  const {  latitude, longitude, token, formData } = options;
 
   
   return apiClient({
@@ -106,7 +106,7 @@ export const submitKycApi = async (options: SubmitKycOptions) => {
     method: "POST",
     body: formData, // Pass the FormData object directly
     headers: {
-      domain,
+      
       latitude,
       longitude,
       Authorization: `Bearer ${token}`,
@@ -118,14 +118,14 @@ export const submitKycApi = async (options: SubmitKycOptions) => {
 type TokenRequestOptions = {
   agentCode: string;
   pipe: string;
-  domain: string;
+  
   token: string;
   latitude: string;
   longitude: string;
 };
 
 export const getAepsTokenApi = async (options: TokenRequestOptions) => {
-  const { agentCode, pipe, domain, token, latitude, longitude } = options;
+  const { agentCode, pipe, token, latitude, longitude } = options;
 
   return apiClient({
     endpoint: "/bankit/kyc/token",
@@ -135,7 +135,7 @@ export const getAepsTokenApi = async (options: TokenRequestOptions) => {
       pipe,
     },
     headers: {
-      domain,
+     
       latitude,
       longitude,
       Authorization: `Bearer ${token}`,

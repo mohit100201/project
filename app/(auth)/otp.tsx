@@ -38,8 +38,8 @@ export default function OTPScreen() {
     from: string;
   }>();
 
-  const { domainName: brandingDomain } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+   
+ 
   const [otp, setOtp] = useState<string[]>(Array(OTP_LENGTH).fill(''));
   const [timer, setTimer] = useState(60);
   const [canResend, setCanResend] = useState(false);
@@ -168,7 +168,7 @@ export default function OTPScreen() {
         },
         {
           flow: from === "login" || from === "signup" ? "login" : "forgot",
-          domain: domainName,
+          
           latitude: location.latitude,
           longitude: location.longitude,
         }

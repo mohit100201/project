@@ -2,7 +2,6 @@ import { apiClient } from "./api.client";
 
 type GetFundRequestsOptions = {
   token: string;
-  domain: string;
   latitude: string;
   longitude: string;
   page?: number;
@@ -23,7 +22,6 @@ export const getFundRequestsApi = async (options: GetFundRequestsOptions) => {
     method: "GET",
     headers: {
       Authorization: `Bearer ${options.token}`,
-      domain: options.domain,
       latitude: options.latitude,
       longitude: options.longitude,
     },
@@ -33,7 +31,7 @@ export const getFundRequestsApi = async (options: GetFundRequestsOptions) => {
 
 // Define types for better IntelliSense and safety
 export interface FetchBankListOptions {
-  domain: string;
+ 
   token: string;
   latitude: number | string;
   longitude: number | string;
@@ -43,14 +41,13 @@ export interface FetchBankListOptions {
 }
 
 export const fetchBankListApi = async (options: FetchBankListOptions) => {
-  const { domain, token, latitude, longitude, payload = {} } = options;
+  const {  token, latitude, longitude, payload = {} } = options;
 
   return apiClient({
     endpoint: "/bankit/fetch-bank-list",
     method: "POST",
     body: payload, // Sending provided payload or empty object
     headers: {
-      domain,
       latitude: latitude.toString(),
       longitude: longitude.toString(),
       Authorization: `Bearer ${token}`,
@@ -62,7 +59,7 @@ export const fetchBankListApi = async (options: FetchBankListOptions) => {
 
 export type GetAdminBanksOptions = {
   token: string;
-  domain: string;
+ 
   latitude: string;
   longitude: string;
 };
@@ -73,7 +70,6 @@ export const getAdminBanksApi = async (options: GetAdminBanksOptions) => {
     method: "GET",
     headers: {
       Authorization: `Bearer ${options.token}`,
-      domain: options.domain,
       latitude: options.latitude,
       longitude: options.longitude,
     },
@@ -87,7 +83,6 @@ export const getAdminQrsApi = async (options: GetAdminBanksOptions) => {
     method: "GET",
     headers: {
       Authorization: `Bearer ${options.token}`,
-      domain: options.domain,
       latitude: options.latitude,
       longitude: options.longitude,
     },

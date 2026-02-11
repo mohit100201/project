@@ -100,7 +100,7 @@ export default function RechargeScreen() {
     const [verifyingMpin, setVerifyingMpin] = useState(false);
     const [selectedPlan, setSelectedPlan] = useState<any>(null);
 
-    const { domainName: brandingDomain } = useBranding();
+     
 
 
     // Helper to render keypad buttons
@@ -150,15 +150,17 @@ export default function RechargeScreen() {
             setDetecting(true);
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
-            const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+           
 
             const res = await checkOperatorApi({
                 mobile: mobileNumber,
-                domain: domainName,
+                
                 latitude: location?.latitude?.toString() || "0.0",
                 longitude: location?.longitude?.toString() || "0.0",
                 token: token || "",
             });
+
+            console.log("Operator detial",res)
 
 
             if (res.success && res.data?.data?.Operator) {
@@ -194,12 +196,11 @@ export default function RechargeScreen() {
 
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
-            const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
-
+            
             const res = await checkROffersApi({
                 mobile,
                 operator_code: operatorCode,
-                domain: domainName,
+                
                 latitude: location?.latitude?.toString() || "0.0",
                 longitude: location?.longitude?.toString() || "0.0",
                 token: token || "",
@@ -237,14 +238,12 @@ export default function RechargeScreen() {
             setFetchingPlans(true);
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
-            const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
-
-            console.log("==operator code==", operatorCode)
+           
             console.log("==circle code==", circleCode)
             const res = await checkMobilePlansApi({
                 operator_code: operatorCode,
                 circle: circleCode, // Matches your API parameter
-                domain: domainName,
+               
                 latitude: location?.latitude?.toString() || "0.0",
                 longitude: location?.longitude?.toString() || "0.0",
                 token: token || "",
@@ -303,10 +302,10 @@ export default function RechargeScreen() {
             setVerifyingMpin(true);
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
-            const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+            
 
             const res = await confirmMpinApi({
-                domain: domainName,
+                
                 latitude: location?.latitude?.toString() || "0",
                 longitude: location?.longitude?.toString() || "0",
                 token: token || "",
@@ -337,10 +336,9 @@ export default function RechargeScreen() {
             setLoading(true);
             const location = await getLatLong();
             const token = await SecureStore.getItemAsync("userToken");
-            const domainName = Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
-
+            
             const res = await rechargeRequestApi({
-                domain: domainName,
+               
                 latitude: location?.latitude?.toString() || "0.0",
                 longitude: location?.longitude?.toString() || "0.0",
                 token: token || "",

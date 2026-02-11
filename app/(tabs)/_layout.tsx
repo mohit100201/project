@@ -16,8 +16,10 @@ export default function TabLayout() {
   const [kycLoading, setKycLoading] = useState(true);
   const [isKycDone, setIsKycDone] = useState(false);
   const appName = (Application.applicationName || '').toString().trim();
+    const { domainName: brandingDomain, tenant } = useBranding();
+    const domainName = brandingDomain !;
 
-  const { domainName: brandingDomain } = useBranding();
+   
   const generateLoginUrl = (domain?: string | null): string => {
   if (!domain) return "";
 
@@ -55,12 +57,12 @@ export default function TabLayout() {
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
       
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+    
 
       if (!token) return;
 
       const res = await getKycStatusApi({
-        domain: domainName,
+        
         latitude: location?.latitude?.toString() || "0",
         longitude: location?.longitude?.toString() || "0",
         token: token,

@@ -17,8 +17,8 @@ const MyComplaints = () => {
     const [loading, setLoading] = useState(true);
     const [refreshing, setRefreshing] = useState(false);
 
-    const { domainName: brandingDomain } = useBranding();
-    const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+     
+    
 
     const fetchTickets = async (pageNumber = 1, isRefreshing = false) => {
         try {
@@ -31,7 +31,7 @@ const MyComplaints = () => {
             const res = await getTicketsApi({
                 page: pageNumber,
                 per_page: 10,
-                domain: domainName,
+               
                 latitude: location?.latitude?.toString() || "0",
                 longitude: location?.longitude?.toString() || "0",
                 token: token || "",

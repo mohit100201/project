@@ -10,7 +10,7 @@ type LoginPayload = {
 export const loginApi = async (
   payload: LoginPayload,
   options: {
-    domain: string;
+    
     latitude: string;
     longitude: string;
   }
@@ -20,7 +20,7 @@ export const loginApi = async (
     method: "POST",
     body: payload,
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
     },
@@ -31,7 +31,7 @@ export const loginApi = async (
 export const forgotPasswordApi = async (
   payload: { login: string },
   options: {
-    domain: string;
+   
     latitude: string;
     longitude: string;
   }
@@ -41,7 +41,7 @@ export const forgotPasswordApi = async (
     method: "POST",
     body: payload,
     headers: {
-      domain: options.domain,
+     
       latitude: options.latitude,
       longitude: options.longitude,
     },
@@ -56,7 +56,7 @@ export const resetPasswordApi = async (
     new_password_confirmation: string;
   },
   options: {
-    domain: string;
+   
     latitude: string;
     longitude: string;
   }
@@ -66,7 +66,7 @@ export const resetPasswordApi = async (
     method: "POST",
     body: payload,
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
     },
@@ -84,7 +84,7 @@ export const registerApi = async (
     password_confirmation: string;
   },
   options: {
-    domain: string;
+    
     latitude: string;
     longitude: string;
   }
@@ -94,7 +94,7 @@ export const registerApi = async (
     method: "POST",
     body: payload,
     headers: {
-      domain: options.domain,
+      
       latitude: options.latitude,
       longitude: options.longitude,
     },
@@ -107,7 +107,7 @@ export const verifyOtpApi = async (
     otp: string;
   },
   options: {
-    domain?: string;
+    
     latitude?: string;
     longitude?: string;
     flow: "login" | "signup" | "forgot";
@@ -123,7 +123,7 @@ export const verifyOtpApi = async (
     method: "POST",
     body: payload,
     headers: {
-      ...(options.domain ? { domain: options.domain } : {}),
+      
       ...(options.latitude ? { latitude: options.latitude } : {}),
       ...(options.longitude ? { longitude: options.longitude } : {}),
     },
@@ -133,7 +133,7 @@ export const verifyOtpApi = async (
 export const logoutApi = async (
   options: {
     token: string;
-    domain: string;
+    
     latitude: string;
     longitude: string;
   }
@@ -143,7 +143,7 @@ export const logoutApi = async (
     method: "POST",
     headers: {
       Authorization: `Bearer ${options.token}`,
-      domain: options.domain,
+     
       latitude: options.latitude,
       longitude: options.longitude,
     },

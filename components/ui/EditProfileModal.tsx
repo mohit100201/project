@@ -44,8 +44,7 @@ export function EditProfileModal({
 }: Props) {
   const translateY = useSharedValue(500);
 
-  const { domainName: brandingDomain, tenant } = useBranding();
-  const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+  
 
   const [loading, setLoading] = useState(false);
   const [form, setForm] = useState({
@@ -91,7 +90,7 @@ export function EditProfileModal({
       if (!location || !token) return;
 
       const res = await updateProfileApi({
-        domain: domainName,
+        
         latitude: location.latitude,
         longitude: location.longitude,
         token,

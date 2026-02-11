@@ -41,8 +41,8 @@ const RequestPayout = () => {
     const [transferModeValue, setTransferModeValue] = useState("All");
     const [transferMode, setTransferMode] = useState([]);
     const [transferModeLoading, setTransferModeLoading] = useState(false);
-    const { domainName: brandingDomain } = useBranding();
-    const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+     
+   
     const [openBene, setOpenBene] = useState(false);
     const [beneValue, setBeneValue] = useState(null);
     const [beneList, setBeneList] = useState<BeneficiaryDropdownItem[]>([]);
@@ -70,7 +70,7 @@ const RequestPayout = () => {
             }
 
             const res = await getPaymentMethodsApi({
-                domain: domainName,
+               
                 latitude: location.latitude,
                 longitude: location.longitude,
                 token,
@@ -108,7 +108,6 @@ const RequestPayout = () => {
             }
 
             const res = await getActiveRecipientsApi({
-                domain: domainName,
                 latitude: location.latitude,
                 longitude: location.longitude,
                 token,
@@ -244,7 +243,7 @@ const RequestPayout = () => {
             if (!location || !token) return;
 
             const res = await getProfileApi({
-                domain: domainName,
+                
                 latitude: location.latitude.toString(),
                 longitude: location.longitude.toString(),
                 token,

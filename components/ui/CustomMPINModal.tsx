@@ -44,7 +44,7 @@ export const MpinVerificationModal = ({
     const [mpin, setMpin] = useState("");
     const [verifying, setVerifying] = useState(false);
 
-    const { domainName: brandingDomain } = useBranding();
+     
 
 
     useEffect(() => {
@@ -71,10 +71,10 @@ export const MpinVerificationModal = ({
 
     const location = await getLatLong();
     const token = await SecureStore.getItemAsync("userToken");
-    const domain = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "laxmeepay.com";
+    
 
     const res = await confirmMpinApi({
-      domain,
+      
       latitude: location?.latitude?.toString() || "0",
       longitude: location?.longitude?.toString() || "0",
       token: token || "",

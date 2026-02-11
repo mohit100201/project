@@ -25,7 +25,7 @@ export default function AepsScreen() {
   const [selectedPipe, setSelectedPipe] = useState("");
   const [aepsReady, setAepsReady] = useState(false);
 
-  const { domainName: brandingDomain } = useBranding();
+   
 
   useEffect(() => {
     fetchKycStatus();
@@ -44,12 +44,11 @@ export default function AepsScreen() {
       setKycLoading(true);
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      const domainName = brandingDomain || Constants.expoConfig?.extra?.tenantData?.domain || "pinepe.in";
+      
 
       if (!token) return;
 
       const res = await getBankItKycStatusApi({
-        domain: domainName,
         latitude: location?.latitude || "0.0",
         longitude: location?.longitude || "0.0",
         token,
