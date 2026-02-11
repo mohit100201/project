@@ -13,112 +13,113 @@ import { useAuth } from '@/context/AuthContext';
 import * as Application from 'expo-application';
 import { logoutApi } from '@/api/auth.api';
 import KYCApplicationForm from '../KYCApplicationForm';
+import { AnimatedCard } from '@/components/animated/AnimatedCard';
 
 export default function TabLayout() {
   type KycStatus = "NOT_SUBMITTED" | "PENDING" | "APPROVED";
 
-const [kycStatus, setKycStatus] = useState<KycStatus>("NOT_SUBMITTED");
-const [kycLoading, setKycLoading] = useState(true);
+  const [kycStatus, setKycStatus] = useState<KycStatus>("NOT_SUBMITTED");
+  const [kycLoading, setKycLoading] = useState(true);
   const appName = (Application.applicationName || '').toString().trim();
-    const { domainName: brandingDomain, tenant } = useBranding();
-    const domainName = brandingDomain !;
+  const { domainName: brandingDomain, tenant } = useBranding();
+  const domainName = brandingDomain!;
 
-   
+
   const generateLoginUrl = (domain?: string | null): string => {
-  if (!domain) return "";
+    if (!domain) return "";
 
-  // Remove protocol if accidentally passed
-  const cleanDomain = domain
-    .replace(/^https?:\/\//, "")
-    .replace(/\/$/, "");
+    // Remove protocol if accidentally passed
+    const cleanDomain = domain
+      .replace(/^https?:\/\//, "")
+      .replace(/\/$/, "");
 
-  return `https://${cleanDomain}/login`;
-};
+    return `https://${cleanDomain}/login`;
+  };
 
- 
+
   const { signOut, hasMPIN } = useAuth();
 
-   const handleLogout = () => {
-  Alert.alert("Logout", "Are you sure you want to logout?", [
-    { text: "Cancel", style: "cancel" },
-    {
-      text: "Logout",
-      style: "destructive",
-      onPress: async () => {
-        try {
-         
+  const handleLogout = () => {
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
 
-          const location = await getLatLong();
-          const token = await SecureStore.getItemAsync("userToken");
 
-          // Call API only if we have required data
-          if (location && token) {
-            try {
-              await logoutApi({
-                latitude: location.latitude,
-                longitude: location.longitude,
-                token,
-              });
-            } catch (apiErr) {
-              // Silent fail – we still logout locally
-              console.log("Logout API failed, proceeding locally");
+            const location = await getLatLong();
+            const token = await SecureStore.getItemAsync("userToken");
+
+            // Call API only if we have required data
+            if (location && token) {
+              try {
+                await logoutApi({
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  token,
+                });
+              } catch (apiErr) {
+                // Silent fail – we still logout locally
+                console.log("Logout API failed, proceeding locally");
+              }
             }
+          } catch (err) {
+            console.log("Logout error:", err);
+          } finally {
+            // 🔐 FORCE LOGOUT LOCALLY (Always runs)
+            await SecureStore.deleteItemAsync("userToken");
+            await SecureStore.deleteItemAsync("userData");
+
+            await signOut();
+            router.replace("/(auth)/login");
+
+
           }
-        } catch (err) {
-          console.log("Logout error:", err);
-        } finally {
-          // 🔐 FORCE LOGOUT LOCALLY (Always runs)
-          await SecureStore.deleteItemAsync("userToken");
-          await SecureStore.deleteItemAsync("userData");
-
-          await signOut();
-          router.replace("/(auth)/login");
-
-         
-        }
+        },
       },
-    },
-  ]);
-};
+    ]);
+  };
 
 
   const checkKycStatus = async () => {
-  try {
-    setKycLoading(true);
+    try {
+      setKycLoading(true);
 
-    const location = await getLatLong();
-    const token = await SecureStore.getItemAsync("userToken");
-    if (!token) return;
+      const location = await getLatLong();
+      const token = await SecureStore.getItemAsync("userToken");
+      if (!token) return;
 
-    const res = await getKycStatusApi({
-      latitude: location?.latitude?.toString() || "0",
-      longitude: location?.longitude?.toString() || "0",
-      token,
-    });
+      const res = await getKycStatusApi({
+        latitude: location?.latitude?.toString() || "0",
+        longitude: location?.longitude?.toString() || "0",
+        token,
+      });
 
-    // 🔥 EXACT BACKEND MAPPING
-    if (res.success === false) {
-      // "KYC not submitted yet"
-      setKycStatus("NOT_SUBMITTED");
-      return;
-    }
-
-    if (res.success === true) {
-      if (res.data?.kyc_status === "Approved") {
-        setKycStatus("APPROVED");
-      } else if (res.data?.kyc_status === "Pending") {
-        setKycStatus("PENDING");
-      } else {
+      // 🔥 EXACT BACKEND MAPPING
+      if (res.success === false) {
+        // "KYC not submitted yet"
         setKycStatus("NOT_SUBMITTED");
+        return;
       }
+
+      if (res.success === true) {
+        if (res.data?.kyc_status === "Approved") {
+          setKycStatus("APPROVED");
+        } else if (res.data?.kyc_status === "Pending") {
+          setKycStatus("PENDING");
+        } else {
+          setKycStatus("NOT_SUBMITTED");
+        }
+      }
+    } catch (err) {
+      console.error("KYC Check Error:", err);
+      setKycStatus("NOT_SUBMITTED");
+    } finally {
+      setKycLoading(false);
     }
-  } catch (err) {
-    console.error("KYC Check Error:", err);
-    setKycStatus("NOT_SUBMITTED");
-  } finally {
-    setKycLoading(false);
-  }
-};
+  };
 
 
   useEffect(() => {
@@ -127,47 +128,133 @@ const [kycLoading, setKycLoading] = useState(true);
 
 
   if (kycLoading) {
-  return (
-    <View style={styles.centered}>
-      <ActivityIndicator size="large" color={theme.colors.primary[500]} />
-    </View>
-  );
-}
+    return (
+      <View style={styles.centered}>
+        <ActivityIndicator size="large" color={theme.colors.primary[500]} />
+      </View>
+    );
+  }
 
-/* ❌ KYC NOT SUBMITTED → SHOW FORM */
-if (kycStatus === "NOT_SUBMITTED") {
-  return (
-    <KYCApplicationForm
-      
-    />
-  );
-}
+  /* ❌ KYC NOT SUBMITTED → SHOW FORM */
+  if (kycStatus === "NOT_SUBMITTED") {
+    return (
+      <KYCApplicationForm
+        onKycSubmitted={checkKycStatus}
+      />
+    );
+  }
 
-/* ⏳ PENDING → SHOW PENDING VIEW */
-if (kycStatus === "PENDING") {
-  return (
-    <View style={styles.centered}>
-      <ShieldAlert size={48} color={theme.colors.primary[500]} />
-      <Text style={{ fontSize: 18, fontWeight: "700", marginTop: 16 }}>
-        KYC Under Review
-      </Text>
-      <Text style={{ marginTop: 8, color: "#666" }}>
-        Your KYC is under verification.
-      </Text>
+  /* ⏳ PENDING → SHOW PENDING VIEW */
+  if (kycStatus === "PENDING") {
+    return (
+     <AnimatedCard style={{
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: '#F8FAFC',
+    padding: 24,
+}}>
+    <View style={{
+        width: '100%',
+        backgroundColor: '#FFFFFF',
+        borderRadius: 24,
+        padding: 40,
+        alignItems: 'center',
+        shadowColor: "#000",
+        shadowOffset: { width: 0, height: 4 },
+        shadowOpacity: 0.07,
+        shadowRadius: 12,
+        elevation: 5,
+    }}>
+        {/* Icon Container */}
+        <View style={{
+            backgroundColor: `${theme.colors.primary[500]}15`,
+            padding: 20,
+            borderRadius: 100,
+            marginBottom: 24
+        }}>
+            <ShieldAlert size={42} color={theme.colors.primary[500]} />
+        </View>
 
-      <TouchableOpacity
-        style={{ marginTop: 20 }}
-        onPress={checkKycStatus}
-      >
-        <RefreshCcw  size={16} color={theme.colors.primary[500]} />
-        <Text style={{ color: theme.colors.primary[500], marginTop: 6 }}>
-          Refresh Status
+        <Text style={{
+            fontSize: 22,
+            fontWeight: "800",
+            color: "#1E293B",
+            textAlign: 'center'
+        }}>
+            Verification in Progress
         </Text>
-      </TouchableOpacity>
+
+        <Text style={{
+            marginTop: 12,
+            color: "#64748B",
+            textAlign: 'center',
+            lineHeight: 22,
+            fontSize: 15
+        }}>
+            We're currently reviewing your documents. This usually takes less than 3-4 working days.
+        </Text>
+
+        {/* Primary Action: Check Status */}
+        <TouchableOpacity
+            activeOpacity={0.7}
+            onPress={checkKycStatus}
+            style={{
+                marginTop: 32,
+                width: '100%', // Full width for better tap target
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                backgroundColor: theme.colors.primary[500],
+                paddingVertical: 14,
+                borderRadius: 16,
+                shadowColor: theme.colors.primary[500],
+                shadowOffset: { width: 0, height: 4 },
+                shadowOpacity: 0.3,
+                shadowRadius: 8,
+            }}
+        >
+            <RefreshCcw size={18} color="#FFF" />
+            <Text style={{
+                color: "#FFF",
+                marginLeft: 10,
+                fontWeight: "600",
+                fontSize: 16
+            }}>
+                Check Update
+            </Text>
+        </TouchableOpacity>
+
+        {/* Secondary Action: Logout */}
+        <TouchableOpacity
+            activeOpacity={0.6}
+            onPress={handleLogout} // Your logout function
+            style={{
+                marginTop: 16,
+                width: '100%',
+                paddingVertical: 14,
+                borderRadius: 16,
+                borderWidth: 1.5,
+                borderColor: '#E2E8F0', // Soft border color
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+            }}
+        >
+            <Text style={{
+                color: "#64748B", 
+                fontWeight: "600",
+                fontSize: 16
+            }}>
+                Logout
+            </Text>
+        </TouchableOpacity>
+        
     </View>
-  );
-}
-  
+</AnimatedCard>
+    );
+  }
+
 
 
 

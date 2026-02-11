@@ -38,7 +38,11 @@ import { submitKYCForm } from "@/api/kyc.api";
 import { KeyboardAvoidingView } from "react-native";
 import { businessTypes } from "@/utils/businessTypesData";
 
-const KYCApplicationForm = () => {
+type Props = {
+  onKycSubmitted?: () => void;
+};
+
+const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
     const [loading, setLoading] = useState(false);
     const [showDatePicker, setShowDatePicker] = useState(false);
     const states = Object.keys(city).sort();
@@ -109,7 +113,7 @@ const KYCApplicationForm = () => {
     const onSubmit = async (data: KYCApplicationFormData) => {
         try {
             setLoading(true);
-            console.log("Hello")
+           
 
             // 1️⃣ Get location
             const location = await getLatLong();
@@ -150,6 +154,8 @@ const KYCApplicationForm = () => {
                 text1: "KYC Submitted",
                 text2: "Your KYC has been submitted for verification",
             });
+
+            onKycSubmitted?.();
 
         } catch (error: any) {
             console.error("KYC submit error:", error);

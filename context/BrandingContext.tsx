@@ -1,10 +1,9 @@
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import Constants from 'expo-constants';
-import * as Application from 'expo-application';
 import { Image } from 'react-native';
-import * as SecureStore from "expo-secure-store";
+import * as Application from 'expo-application';
 import { setApiHeaders } from '@/api/api.header';
 
+// --- Types ---
 type BrandingState = {
   logoUrl: string | null;
   domainName: string | null;
@@ -12,6 +11,7 @@ type BrandingState = {
   loading: boolean;
 };
 
+// --- Context Definition ---
 const BrandingContext = createContext<BrandingState>({
   logoUrl: null,
   domainName: null,
@@ -21,8 +21,7 @@ const BrandingContext = createContext<BrandingState>({
 
 export const useBranding = () => useContext(BrandingContext);
 
-// Use tenant list API requested; will match app name to choose the tenant
-const TENANTS_API = 'https://api.pinepe.in/api/users?type=whitelabel&per_page=10&page=1';
+const TENANTS_API = 'https://api.pinepe.in/api/whitelabel/theme';
 
 export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -30,69 +29,86 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
   const [tenant, setTenant] = useState<any | null>(null);
   const [loading, setLoading] = useState(true);
 
+  /**
+   * Maps the internal App Name to the specific Production Domain
+   */
+  const getDomainFromAppName = (appName: string): string => {
+    const name = appName.toLowerCase().trim();
+
+    switch (name) {
+      case 'pinepe':
+        return 'app.pinepe.in';
+      case 'cashpe':
+        return 'cashpe.net';
+      case 'nexapay':
+        return 'nexapay.co.in';
+      case 'loksevapay':
+        return 'loksevapay.in';
+      case 'nkpay':
+        return 'login.nkpay.in';
+      default:
+        // Default fallback
+        return 'app.pinepe.in';
+    }
+  };
+
   useEffect(() => {
-    const init = async () => {
+    const initBranding = async () => {
       try {
-
-
-        // Otherwise, try to infer tenant by the installed application name
-        // const appName = (Application.applicationName || '').toString().trim();
-        const appName = "pinepe";
-       
-        if (!appName) {
-          setLoading(false);
-          return;
-        }
-
-
-        // Fetch tenant list and match by name / unique_id (case-insensitive)
-        const token = "346|y1Jka32RNDwMg1gGkNGAhO1txb319kghZkkIqfiHf5049b46";
+        const appName = (Application.applicationName || '').toString().trim();
+        // const appName = "cashpe"; 
         
-        const res = await fetch(TENANTS_API, { headers: { Accept: 'application/json', 'Authorization': `Bearer ${token}`, } });
-        const json = await res.json();
-       
-        if (json?.data?.items && Array.isArray(json.data.items)) {
-          const key = appName.toLowerCase();
-          const found = json.data.items.find((t: any) => {
-            return (
-              (t.name && t.name.toLowerCase() === key) ||
-              (t.unique_id && t.unique_id.toString().toLowerCase() === key) ||
-              (t.domain && t.domain.toLowerCase().includes(key))
-            );
-          });
+        // 2. Resolve Domain immediately via switch case
+        const resolvedDomain = getDomainFromAppName(appName);
+        setDomainName(resolvedDomain);
 
-          
+        // 3. Update global API headers so subsequent calls are authorized/contextualized
+        setApiHeaders({
+          domain: resolvedDomain,
+        });
 
-          if (found) {
-            setTenant(found);
-
-            const domain = found.domain || null;
-            setDomainName(domain);
-
-            if (domain) {
-              setApiHeaders({
-                domain,
-              });
-            }
-
-            const photo = found.photo || null;
-            if (photo) {
-              try {
-                await Image.prefetch(photo);
-              } catch { }
-            }
-            setLogoUrl(photo);
+        // 4. Fetch the specific Whitelabel configuration for this domain
+        // Note: We pass the resolvedDomain in the 'domain' header
+        const response = await fetch(TENANTS_API, {
+          headers: {
+            'Accept': 'application/json',
+            'domain': resolvedDomain 
           }
+        });
 
+        const json = await response.json();
+
+        if (json.success && json.data) {
+          // The API returns { theme: {...}, plans: [...] } in json.data
+          const themeData = json.data.theme;
+          
+          // Set the full tenant object (includes theme and plans)
+          setTenant(json.data);
+
+          // 5. Determine the best Logo (Priority: Mobile Logo > Standard Logo)
+          const finalLogo = themeData?.mobile_logo || themeData?.logo;
+          
+          if (finalLogo) {
+            setLogoUrl(finalLogo);
+            // Optimization: Prefetch image into cache
+            try {
+              await Image.prefetch(finalLogo);
+            } catch (e) {
+              console.warn("Logo prefetch failed", e);
+            }
+          }
+        } else {
+          console.warn("API responded successfully but data was missing.");
         }
+
       } catch (err) {
-        console.warn('Branding init failed:', err);
+        console.warn('Branding initialization failed:', err);
       } finally {
         setLoading(false);
       }
     };
 
-    init();
+    initBranding();
   }, []);
 
   return (
