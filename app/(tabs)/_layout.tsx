@@ -129,9 +129,9 @@ export default function TabLayout() {
     checkKycStatus();
   }, []);
 
-  // return(
-  //   <PaysprintTest/>
-  // )
+  return(
+    <PaysprintTest/>
+  )
 
 
   if (kycLoading) {
