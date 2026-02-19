@@ -68,43 +68,36 @@ class MantraModule(
 
     override fun getName(): String = "MantraRD"
 
-    @ReactMethod
-    fun captureFingerprint(promise: Promise) {
+   @ReactMethod
+fun captureFingerprint(wadh: String?, promise: Promise) { // Add wadh parameter
 
-        if (mantraPromise != null) {
-            promise.reject("IN_PROGRESS", "Fingerprint scan already in progress")
-            return
-        }
-
-        val activity = reactContext.currentActivity
-        if (activity == null) {
-            promise.reject("NO_ACTIVITY", "Activity is null")
-            return
-        }
-
-        mantraPromise = promise
-
-        val pidOptions = """
-            <?xml version="1.0" encoding="UTF-8"?>
-            <PidOptions ver="1.0">
-                <Opts
-                    fCount="1"
-                    fType="0"
-                    iCount="0"
-                    pCount="0"
-                    format="0"
-                    pidVer="2.0"
-                    timeout="10000"
-                    env="P"
-                />
-            </PidOptions>
-        """.trimIndent()
-
-        val intent = Intent("in.gov.uidai.rdservice.fp.CAPTURE").apply {
-            putExtra("PID_OPTIONS", pidOptions)
-        }
-
-        Log.d(TAG, "== LAUNCHING MANTRA RD SERVICE ==")
-        activity.startActivityForResult(intent, MANTRA_REQUEST_CODE)
+    if (mantraPromise != null) {
+        promise.reject("IN_PROGRESS", "Fingerprint scan already in progress")
+        return
     }
+
+    val activity = reactContext.currentActivity
+    if (activity == null) {
+        promise.reject("NO_ACTIVITY", "Activity is null")
+        return
+    }
+
+    mantraPromise = promise
+
+    // Construct PidOptions with wadh if provided
+    val wadhAttr = if (!wadh.isNullOrEmpty()) " wadh=\"$wadh\"" else ""
+    
+  val pidOptions = """<?xml version="1.0" encoding="UTF-8"?>
+<PidOptions ver="1.0">
+    <Opts fCount="1" fType="2" iCount="0" pCount="0" format="0" pidVer="2.0" timeout="10000" env="P" wadh="$wadh"/>
+    <Uses fName="true" fType="2"/>
+</PidOptions>""".trimIndent()
+
+    val intent = Intent("in.gov.uidai.rdservice.fp.CAPTURE").apply {
+        putExtra("PID_OPTIONS", pidOptions)
+    }
+
+    Log.d(TAG, "== LAUNCHING MANTRA RD SERVICE WITH WADH: $wadh ==")
+    activity.startActivityForResult(intent, MANTRA_REQUEST_CODE)
+}
 }

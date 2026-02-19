@@ -22,6 +22,7 @@ import { getWalletBalanceApi } from '../../api/balance.api';
 import { ServiceItem } from './services';
 import { VALID_ROUTES } from '@/utils/routes';
 import { useTheme } from '@/context/ThemeProvider';
+import { AppTheme } from '@/theme/theme';
 
 const ShimmerPlaceholder = createShimmerPlaceholder(LinearGradient);
 
@@ -448,7 +449,7 @@ export default function HomeScreen() {
   );
 }
 
-const createStyles = (theme: any) => StyleSheet.create({
+const createStyles = (theme: AppTheme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background.main },
   header: { paddingTop: theme.spacing[12], paddingHorizontal: theme.spacing[6], paddingBottom: theme.spacing[8] },
   headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing[6] },
@@ -479,7 +480,7 @@ const createStyles = (theme: any) => StyleSheet.create({
   transactionCard: {
     padding: theme.spacing[4],
     marginBottom: theme.spacing[3],
-    backgroundColor: theme.colors.background.light,
+    backgroundColor: theme.colors.background.main,
     borderRadius: theme.borderRadius.xl
   },
   cardRow: { flexDirection: 'row', alignItems: 'center' },

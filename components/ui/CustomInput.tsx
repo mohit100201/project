@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { View, Text, TextInput, StyleSheet, TextInputProps } from "react-native";
 import { theme } from "@/theme";
 import { LucideIcon } from "lucide-react-native";
@@ -12,7 +12,6 @@ interface CustomInputProps extends TextInputProps {
   iconColor?: string;
 }
 
-// No changes needed to the logic, but here is how it looks fully ready for state
 const CustomInput: React.FC<CustomInputProps> = ({
   label,
   error,
@@ -21,11 +20,25 @@ const CustomInput: React.FC<CustomInputProps> = ({
   iconSize = 20,
   iconColor = theme.colors.primary[500],
   style,
-  value,          // Explicitly extracting these for clarity
-  onChangeText,   // Explicitly extracting these for clarity
+  value,
+  onChangeText,
   editable = true,
+  onFocus,
+  onBlur,
   ...props
 }) => {
+  const [isFocused, setIsFocused] = useState(false);
+
+  const handleFocus = (e: any) => {
+    setIsFocused(true);
+    onFocus?.(e);
+  };
+
+  const handleBlur = (e: any) => {
+    setIsFocused(false);
+    onBlur?.(e);
+  };
+
   return (
     <View style={styles.container}>
       {label && <Text style={styles.label}>{label}</Text>}
@@ -34,27 +47,30 @@ const CustomInput: React.FC<CustomInputProps> = ({
         styles.inputWrapper,
         error ? styles.inputError : null,
         !editable ? styles.inputDisabled : null,
+        isFocused && !error && styles.inputFocused,
         props.multiline && { minHeight: 100, alignItems: 'flex-start', paddingTop: 12 }
       ]}>
 
         {IconStart && (
           <View style={styles.iconContainerStart}>
-            <IconStart size={iconSize} color={iconColor} />
+            <IconStart size={iconSize} color={isFocused ? theme.colors.primary[500] : iconColor} />
           </View>
         )}
 
         <TextInput
           style={[styles.input, style]}
           placeholderTextColor={theme.colors.text.secondary}
-          value={value}             // Pass state value here
-          onChangeText={onChangeText} // Pass setState function here
+          value={value}
+          onChangeText={onChangeText}
           editable={editable}
+          onFocus={handleFocus}
+          onBlur={handleBlur}
           {...props}
         />
 
         {IconEnd && (
           <View style={styles.iconContainerEnd}>
-            <IconEnd size={iconSize} color={iconColor} />
+            <IconEnd size={iconSize} color={isFocused ? theme.colors.primary[500] : iconColor} />
           </View>
         )}
       </View>
@@ -76,26 +92,30 @@ const styles = StyleSheet.create({
     fontWeight: "600",
     color: theme.colors.text.secondary,
     marginBottom: 8,
-    marginTop: 12,
+    marginTop: 16,
   },
   inputWrapper: {
     flexDirection: "row",
     alignItems: "center",
-    backgroundColor: "#FFF", // Default background
+    backgroundColor: "#FFF",
     borderRadius: 14,
     borderWidth: 1,
     borderColor: "rgba(0,0,0,0.1)",
-    minHeight: 55,
+    minHeight: 48,
     overflow: "hidden",
   },
+  inputFocused: {
+    borderColor: theme.colors.primary[500],
+    borderWidth: 2,
+  },
   inputDisabled: {
-    backgroundColor: "#D1D5DB", // Tailwind Gray-300
-    borderColor: "#9CA3AF",     // Tailwind Gray-400
+    backgroundColor: "#D1D5DB",
+    borderColor: "#9CA3AF",
   },
   input: {
     flex: 1,
     height: "100%",
-    paddingHorizontal: 15,
+    paddingHorizontal: 8,
     fontSize: 15,
     color: theme.colors.text.primary,
   },
@@ -109,7 +129,7 @@ const styles = StyleSheet.create({
     fontWeight: "600",
   },
   iconContainerStart: {
-    paddingLeft: 15,
+    paddingLeft: 12,
     justifyContent: "center",
     alignItems: "center",
   },

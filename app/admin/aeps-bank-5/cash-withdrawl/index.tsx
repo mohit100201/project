@@ -33,8 +33,11 @@ import {
     Printer,
     Download,
     ArrowRight,
-    IndianRupee
+    IndianRupee,
+    Smartphone,
+    Fingerprint
 } from "lucide-react-native";
+import CustomDropdown3 from "@/components/ui/CustomDropdwon3";
 
 interface CashWithdrawalForm {
     mobileno: string;
@@ -77,6 +80,29 @@ const CashWithdrawal = () => {
 
     const [bankOptions, setBankOptions] = useState<DropdownItem[]>([]);
     const [bankOpen, setBankOpen] = useState(false);
+    const [dropdownKey, setDropdownKey] = useState(0);
+    const [biometricKey, setBiometricKey] = useState(0);
+
+
+    const INITIAL_FORM: CashWithdrawalForm = {
+        mobileno: "",
+        aadhaar: "",
+        bankIIN: "",
+        biometricData: "",
+        ipAddress: "",
+        amount: "",
+    };
+
+    const INITIAL_TOUCHED = {
+        mobileno: false,
+        aadhaar: false,
+        bankIIN: false,
+        biometricData: false,
+        amount: false,
+    };
+
+    const INITIAL_ERRORS = {};
+
 
     const [form, setForm] = useState<CashWithdrawalForm>({
         mobileno: "",
@@ -274,6 +300,34 @@ const CashWithdrawal = () => {
         return mobileValid && aadhaarValid && bankValid && biometricValid && amountValid;
     };
 
+    const resetFormToInitial = () => {
+
+        console.log("iniside clean")
+    // 1. Reset the main form state
+    setForm({
+        mobileno: "",
+        aadhaar: "",
+        bankIIN: "",
+        biometricData: "",
+        ipAddress: form.ipAddress, // Keep the IP so you don't have to refetch
+        amount: "",
+    });
+
+    // 2. Clear validation states immediately
+    setErrors({});
+    setTouched({
+        mobileno: false,
+        aadhaar: false,
+        bankIIN: false,
+        biometricData: false,
+        amount: false,
+    });
+
+    // 3. Force unmount/remount of complex UI components
+    setDropdownKey(prev => prev + 1);
+    setBiometricKey(prev => prev + 1);
+};
+
     /* ---------------- SUBMIT ---------------- */
 
     const handleSubmit = async () => {
@@ -334,23 +388,10 @@ const CashWithdrawal = () => {
                     text1: "Success",
                     text2: `₹${form.amount} withdrawn successfully`,
                 });
-                // Reset form on success
-                setForm({
-                    mobileno: "",
-                    aadhaar: "",
-                    bankIIN: "",
-                    biometricData: "",
-                    ipAddress: form.ipAddress, // Keep IP address
-                    amount: "",
-                });
-                setTouched({
-                    mobileno: false,
-                    aadhaar: false,
-                    bankIIN: false,
-                    biometricData: false,
-                    amount: false,
-                });
-            } else {
+
+              
+            }
+            else {
                 throw new Error(res?.message || "Cash withdrawal failed");
             }
         } catch (err: any) {
@@ -360,6 +401,7 @@ const CashWithdrawal = () => {
                 text2: err.message || "Network Error",
             });
         } finally {
+             resetFormToInitial();
             setLoading(false);
         }
     };
@@ -418,6 +460,7 @@ const CashWithdrawal = () => {
                         error={touched.mobileno ? errors.mobileno : undefined}
                         onChangeText={(text) => update("mobileno", text)}
                         onBlur={() => handleBlur("mobileno")}
+                        iconStart={Smartphone}
                     />
 
                     {/* Aadhaar */}
@@ -430,78 +473,31 @@ const CashWithdrawal = () => {
                         error={touched.aadhaar ? errors.aadhaar : undefined}
                         onChangeText={(text) => update("aadhaar", text)}
                         onBlur={() => handleBlur("aadhaar")}
+                        iconStart={Fingerprint}
                     />
 
-                    <Text style={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        color: theme.colors.text.secondary,
-                        marginBottom: 8,
-                        marginTop: 12,
-                    }}>Select Bank</Text>
-
-                    <DropDownPicker
-                        open={bankOpen}
-                        value={form.bankIIN || null}
+                    <CustomDropdown3
+                        key={dropdownKey}
+                        label="Select Bank"
+                        value={form.bankIIN}
                         items={bankOptions}
-                        setOpen={setBankOpen}
-                        setValue={(cb) => {
-                            setForm(prev => ({
-                                ...prev,
-                                bankIIN: typeof cb === "function" ? cb(prev.bankIIN) : cb,
-                            }));
-                            // Clear bank error when selection is made
-                            if (errors.bankIIN) {
-                                setErrors(prev => ({ ...prev, bankIIN: undefined }));
-                            }
-                        }}
-                        setItems={setBankOptions}
                         placeholder="Choose your bank"
-                        listMode="SCROLLVIEW"
-                        style={{
-                            borderColor: touched.bankIIN && errors.bankIIN
-                                ? "#EF4444"
-                                : "rgba(0,0,0,0.1)",
-                            backgroundColor: "#FFF",
-                            borderRadius: 14,
-                            borderWidth: 1,
-                            minHeight: 55,
-                            paddingHorizontal: 15,
+                        error={touched.bankIIN ? errors.bankIIN : undefined}
+                        onSelect={(item) => {
+                            setForm(prev => ({ ...prev, bankIIN: item.value }));
+                            setTouched(prev => ({ ...prev, bankIIN: true }));
+                            setErrors(prev => ({ ...prev, bankIIN: undefined }));
                         }}
-                        dropDownContainerStyle={{
-                            backgroundColor: "#FFF",
-                            borderColor: "rgba(0,0,0,0.1)",
-                            borderRadius: 14,
-                            marginTop: 4,
-                        }}
-                        placeholderStyle={{
-                            color: theme.colors.text.secondary,
-                            fontSize: 15,
-                        }}
-                        labelStyle={{
-                            color: theme.colors.text.primary,
-                            fontSize: 15,
-                        }}
-                        disabled={bankOptions.length === 0}
-                        onOpen={() => setTouched(prev => ({ ...prev, bankIIN: true }))}
-                        zIndex={1000}
                     />
 
-                    {touched.bankIIN && errors.bankIIN && (
-                        <Text style={{ color: "#EF4444", fontSize: 12, marginTop: 4 }}>
-                            {errors.bankIIN}
-                        </Text>
-                    )}
 
                     {/* Biometric Scanner with reset key */}
                     <BiometricScanner
-                        key={`biometric-scanner-${form.biometricData}`}
+                        key={biometricKey}
+                        wadh=""
                         onScanSuccess={(data) => {
                             update("biometricData", data);
-                            // Clear biometric error on successful scan
-                            if (errors.biometricData) {
-                                setErrors(prev => ({ ...prev, biometricData: undefined }));
-                            }
+                            setErrors(prev => ({ ...prev, biometricData: undefined }));
                         }}
                         onScanError={() => {
                             update("biometricData", "");
@@ -511,6 +507,7 @@ const CashWithdrawal = () => {
                             }));
                         }}
                     />
+
 
                     {touched.biometricData && errors.biometricData && (
                         <Text style={{
@@ -639,25 +636,6 @@ const CashWithdrawal = () => {
                                             </Text>
                                         </View>
                                     )}
-                                </View>
-
-                                {/* Action Buttons */}
-                                <View style={styles.actionButtons}>
-                                    <Pressable
-                                        style={[styles.actionButton, styles.printButton]}
-                                        onPress={handlePrint}
-                                    >
-                                        <Printer size={20} color="#FFF" />
-                                        <Text style={styles.actionButtonText}>Print Receipt</Text>
-                                    </Pressable>
-
-                                    <Pressable
-                                        style={[styles.actionButton, styles.downloadButton]}
-                                        onPress={handleDownload}
-                                    >
-                                        <Download size={20} color="#FFF" />
-                                        <Text style={styles.actionButtonText}>Download</Text>
-                                    </Pressable>
                                 </View>
 
                                 {/* Done Button */}

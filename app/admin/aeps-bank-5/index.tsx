@@ -10,15 +10,17 @@ import AepsPaysprint from "./AepsPaysprint";
 import Aeps2FA from "./Aeps2FA";
 import OnboardingUnderReview from "./OnboardingUnderReview";
 import { theme } from "@/theme";
+import { useNavigation } from "@react-navigation/native";
 
 const AepsAirtel = () => {
+    const navigation = useNavigation<any>();
     const [code, setCode] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<string | null>(null);
     const [is2FADone, setIs2FADone] = useState(false)
     const [merchantCode, setMerchantCode] = useState("")
-    const [lat, setLat] = useState("")
-    const [lng, setLng] = useState("");
+    const [merchantOwnStatus,setMerchantOwnStatus]=useState("");
+
 
     useEffect(() => {
         fetchStatus();
@@ -58,17 +60,25 @@ const AepsAirtel = () => {
                 }
             );
             setMerchantCode(res.merchant.merchantcode)
-            setLat(location.latitude)
-            setLng(location.longitude)
             setIs2FADone(res.isTwoFaDone)
             setStatus(res.response.data?.is_approved)
             setCode(res.response.code);
+            setMerchantOwnStatus(res.merchant.onboard_status)
         } catch (err: any) {
-            Toast.show({
+            
+            if(err.message=="Merchant not found"){
+                
+
+            }
+            else{
+                Toast.show({
                 type: "error",
                 text1: "Status Not Fetched",
                 text2: err.message || "Network Error",
             });
+
+            }
+            
         } finally {
             setLoading(false);
         }
@@ -90,6 +100,9 @@ const AepsAirtel = () => {
 
 
     if (code === 0) {
+        if(merchantOwnStatus=="pending"){
+          return <OnboardingScreen  merchantCode={merchantCode}  fetchStatus={fetchStatus}/>
+        }
         return <OnboardingUnderReview onRefresh={fetchStatus} />;
     }
 
@@ -97,7 +110,7 @@ const AepsAirtel = () => {
     const renderScreen = () => {
         switch (code) {
             case 2:
-                return <OnboardingScreen lat={lat} lng={lng} merchantCode={merchantCode} />
+                return <OnboardingScreen  merchantCode={merchantCode}  fetchStatus={fetchStatus}/>
             case 1:
                 if (status == "Pending") {
                     return <Ekyc fetchStatus={fetchStatus} />
@@ -117,7 +130,7 @@ const AepsAirtel = () => {
 
                 return <Aeps2FA fetchStatus={fetchStatus} />
             default:
-                return <OnboardingScreen lat={lat} lng={lng} merchantCode={merchantCode} />
+                return <OnboardingScreen  merchantCode={merchantCode}  fetchStatus={fetchStatus}/>
 
 
         }

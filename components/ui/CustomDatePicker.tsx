@@ -1,22 +1,34 @@
 import React, { useState } from 'react';
 import { View, Text, TouchableOpacity, TextInput, StyleSheet, Platform } from 'react-native';
 import DateTimePicker from '@react-native-community/datetimepicker';
-import { Calendar } from 'lucide-react-native'; // Assuming lucide-react-native is installed
+import { Calendar } from 'lucide-react-native';
 import { theme } from '@/theme';
 
 interface CustomDatePickerProps {
     label: string;
     dateValue: string;
     onDateChange: (formattedDate: string) => void;
-    theme: any; // Pass your theme object
+    error?: string;
+    theme?: any; // Make theme optional since we're importing it
 }
 
-const CustomDatePicker = ({ label, dateValue, onDateChange, theme }: CustomDatePickerProps) => {
+const CustomDatePicker = ({
+    label,
+    dateValue,
+    onDateChange,
+    error,
+    theme: propTheme
+}: CustomDatePickerProps) => {
     const [show, setShow] = useState(false);
     const [internalDate, setInternalDate] = useState(new Date());
+    const [isFocused, setIsFocused] = useState(false);
+
+    // Use theme from props or imported theme
+    const activeTheme = propTheme || theme;
 
     const handleChange = (_event: any, selectedDate?: Date) => {
         setShow(false);
+        setIsFocused(false);
         if (selectedDate) {
             setInternalDate(selectedDate);
             const formattedDate = `${String(selectedDate.getDate()).padStart(2, "0")}-${String(
@@ -26,26 +38,49 @@ const CustomDatePicker = ({ label, dateValue, onDateChange, theme }: CustomDateP
         }
     };
 
+    const handlePress = () => {
+        setShow(true);
+        setIsFocused(true);
+    };
+
+    const handleCancel = () => {
+        setShow(false);
+        setIsFocused(false);
+    };
+
     return (
         <View style={styles.container}>
-            {label && <Text style={styles.inputLabel}>{label}</Text>}
-            
-            <TouchableOpacity 
-                style={styles.dateInputRow} 
-                onPress={() => setShow(true)}
+            {label && <Text style={styles.label}>{label}</Text>}
+
+            <TouchableOpacity
+                style={[
+                    styles.dateInputRow,
+                    error ? styles.inputError : null,
+                    isFocused && !error && styles.inputFocused
+                ]}
+                onPress={handlePress}
                 activeOpacity={0.7}
             >
+
+
                 <TextInput
                     style={styles.input}
                     placeholder="DD-MM-YYYY"
                     value={dateValue}
                     editable={false}
-                    placeholderTextColor={theme.colors.text.secondary}
+                    placeholderTextColor={activeTheme.colors.text.secondary}
+                    onFocus={() => setIsFocused(true)}
+                    onBlur={() => setIsFocused(false)}
                 />
-                <View style={styles.calendarBtn}>
-                    <Calendar size={20} color={theme.colors.primary[500]} />
+                <View style={styles.iconContainerStart}>
+                    <Calendar
+                        size={20}
+                        color={isFocused ? activeTheme.colors.primary[500] : activeTheme.colors.primary[500]}
+                    />
                 </View>
             </TouchableOpacity>
+
+            {error && <Text style={styles.errorText}>{error}</Text>}
 
             {show && (
                 <DateTimePicker
@@ -56,39 +91,76 @@ const CustomDatePicker = ({ label, dateValue, onDateChange, theme }: CustomDateP
                     maximumDate={new Date()}
                 />
             )}
+
+            {/* For iOS, add a cancel button */}
+            {show && Platform.OS === "ios" && (
+                <TouchableOpacity
+                    style={styles.cancelButton}
+                    onPress={handleCancel}
+                >
+                    <Text style={styles.cancelButtonText}>Cancel</Text>
+                </TouchableOpacity>
+            )}
         </View>
     );
 };
 
 const styles = StyleSheet.create({
-    container: { width: '100%' },
-    inputLabel: { 
-        fontSize: 13, 
-        fontWeight: '600', 
+    container: {
+        width: '100%'
+    },
+    label: {
+        fontSize: 14,
+        fontWeight: "600",
         color: theme.colors.text.secondary,
-        marginBottom: 8, 
-        marginTop: 12 
+        marginBottom: 8,
+        marginTop: 16,
     },
     dateInputRow: {
         flexDirection: 'row',
         alignItems: 'center',
         borderWidth: 1,
-        borderRadius: 14, // Matches Dropdown
-        borderColor: "rgba(0,0,0,0.1)", // Matches Dropdown
-        backgroundColor: theme.colors.background.dark || "#FFF",
-        minHeight: 55, // Matches Dropdown
+        borderRadius: 14,
+        borderColor: "rgba(0,0,0,0.1)",
+        backgroundColor: "#FFF",
+        minHeight: 48,
         overflow: 'hidden',
+    },
+    inputFocused: {
+        borderColor: theme.colors.primary[500],
+        borderWidth: 2,
+    },
+    inputError: {
+        borderColor: "#EF4444",
+    },
+    iconContainerStart: {
+        paddingRight: 12,
+        justifyContent: "center",
+        alignItems: "center",
     },
     input: {
         flex: 1,
-        paddingHorizontal: 12,
+        paddingHorizontal: 8,
         fontSize: 15,
         color: theme.colors.text.primary,
     },
-    calendarBtn: {
-        paddingHorizontal: 15,
-        justifyContent: 'center',
+    errorText: {
+        color: "#EF4444",
+        fontSize: 11,
+        marginTop: 4,
+        fontWeight: "600",
+    },
+    cancelButton: {
+        marginTop: 8,
+        padding: 12,
+        backgroundColor: '#F3F4F6',
+        borderRadius: 14,
         alignItems: 'center',
+    },
+    cancelButtonText: {
+        color: theme.colors.primary[500],
+        fontSize: 16,
+        fontWeight: '600',
     },
 });
 

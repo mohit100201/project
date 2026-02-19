@@ -9,6 +9,8 @@ import { Text, View } from "react-native"
 import * as SecureStore from "expo-secure-store";
 import { getLatLong } from "@/utils/location";
 import Toast from "react-native-toast-message";
+import CustomDropdownPicker2 from "@/components/ui/AppDropdown";
+import { natureOfBusinessItems } from "@/utils/paysprintData";
 
 
 type EkycProps = {
@@ -17,8 +19,8 @@ type EkycProps = {
 }
 
 const Ekyc = (props: EkycProps) => {
-    const [annualIncome, setAnnualIncome] = useState("50000.00");
-    const [businessNature, setBusinessNature] = useState("test");
+    const [annualIncome, setAnnualIncome] = useState("");
+    const [businessNature, setBusinessNature] = useState("");
     const [errors, setErrors] = useState<{
         annualIncome?: string;
         businessNature?: string;
@@ -89,6 +91,7 @@ const Ekyc = (props: EkycProps) => {
                 throw new Error("Biometric data missing");
             }
 
+            console.log("businessNature",businessNature)
 
             const response = await paysprintEkyc(
 
@@ -99,14 +102,15 @@ const Ekyc = (props: EkycProps) => {
                     bank: "bank5",
                     piddata: biometricData,
                     annual_income: annualIncome,
-                    nature_of_business: businessNature
+                    nature_of_bussiness: businessNature,
+                    accessmode:"APP"
 
                 }
             );
 
             if (
                 response?.success === true &&
-                response?.code === 1 &&
+                response?.code === 2 &&
                 response?.data?.status === true
             ) {
                 Toast.show({
@@ -128,7 +132,7 @@ const Ekyc = (props: EkycProps) => {
                         "eKYC failed",
                 });
 
-                
+
             }
 
         } catch (err: any) {
@@ -169,22 +173,23 @@ const Ekyc = (props: EkycProps) => {
                             }}
                         />
 
-                        <CustomInput
+                        <CustomDropdownPicker2
                             label="Nature of Business"
-                            placeholder="e.g. Retail, Consulting"
+                            placeholder="Select business type"
+                            items={natureOfBusinessItems}
                             value={businessNature}
-                            autoCapitalize="none"
-                            error={errors.businessNature}
-                            onChangeText={(text: string) => {
-                                setBusinessNature(text)
-                                if (errors.businessNature) {
-                                    setErrors(prev => ({ ...prev, businessNature: undefined }));
-                                }
+                            onValueChange={(val) => {
+                                setBusinessNature(val);
+                                if (errors.businessNature) setErrors(prev => ({ ...prev, businessNature: undefined }));
                             }}
+                            error={errors.businessNature}
+                            zIndex={3000}
+                            zIndexInverse={1000}
+                            listMode="MODAL"
                         />
 
                         <BiometricScanner
-                            // wadh="E0jzJ/P8UopUHAieZn8CKqS4WPMi5ZSYXgfnlfkWjrc="
+                            wadh="E0jzJ/P8UopUHAieZn8CKqS4WPMi5ZSYXgfnlfkWjrc="
                             onScanSuccess={(data) => setBiometricData(data)}
                             onScanError={() => setBiometricData(null)}
                         />

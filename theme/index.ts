@@ -35,6 +35,7 @@ export const theme = {
       light:'#FFFFFF',
       dark: colors.background?.dark || '#F8F9FA',
       darker: colors.background?.darker || '#F0F2F5',
+      
     },
 
     // // Usage-based Text

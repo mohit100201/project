@@ -35,8 +35,11 @@ import {
     ArrowRight,
     Calendar,
     IndianRupee,
-    Receipt
+    Receipt,
+    Smartphone,
+    Fingerprint
 } from "lucide-react-native";
+import CustomDropdown3 from "@/components/ui/CustomDropdwon3";
 
 interface MiniStatementForm {
     mobileno: string;
@@ -83,6 +86,32 @@ const MiniStatement = () => {
 
     const [bankOptions, setBankOptions] = useState<DropdownItem[]>([]);
     const [bankOpen, setBankOpen] = useState(false);
+    const [dropdownKey, setDropdownKey] = useState(0);
+const [biometricKey, setBiometricKey] = useState(0);
+
+const handleFullReset = () => {
+    // 1. Reset Form (Preserving IP)
+    setForm(prev => ({
+        mobileno: "",
+        aadhaar: "",
+        bankIIN: "",
+        biometricData: "",
+        ipAddress: prev.ipAddress, 
+    }));
+
+    // 2. Clear Validation States
+    setErrors({});
+    setTouched({
+        mobileno: false,
+        aadhaar: false,
+        bankIIN: false,
+        biometricData: false,
+    });
+
+    // 3. Force Re-mount of custom components
+    setDropdownKey(prev => prev + 1);
+    setBiometricKey(prev => prev + 1);
+};
 
     const [form, setForm] = useState<MiniStatementForm>({
         mobileno: "",
@@ -139,6 +168,33 @@ const MiniStatement = () => {
         if (errors[key as keyof typeof errors]) {
             setErrors(prev => ({ ...prev, [key]: undefined }));
         }
+    };
+
+    const parseNPCIData = (data: string[]): TransactionItem[] => {
+        if (!data || data.length === 0) return [];
+
+        return data
+            .filter(row => row.includes('DR') || row.includes('CR')) // Filter out balance line
+            .map(row => {
+                // Raw: "/02/26DR TO TRANSFER   000000099900"
+                const date = row.substring(0, 6).replace(/\//g, '').trim(); // "02/26"
+                const type = row.includes('CR') ? 'C' : 'D';
+                const typeIndex = row.indexOf(type === 'C' ? 'CR' : 'DR');
+
+                // Narration is between the Type and the Amount
+                const narration = row.substring(typeIndex + 2, row.length - 12).trim();
+
+                // Amount is the last 12 digits (in paisa)
+                const amountRaw = row.substring(row.length - 12);
+                const amount = parseFloat(amountRaw) / 100;
+
+                return {
+                    date: row.substring(0, 6), // Keeps "/02/26"
+                    amount,
+                    txnType: type,
+                    narration: narration || "Transfer"
+                };
+            });
     };
 
     const handleBlur = (field: keyof typeof touched) => {
@@ -264,6 +320,7 @@ const MiniStatement = () => {
     /* ---------------- SUBMIT ---------------- */
 
     const handleSubmit = async () => {
+         if (loading) return;
         if (!validate()) {
             Toast.show({
                 type: "error",
@@ -309,12 +366,28 @@ const MiniStatement = () => {
             };
 
             const res = await paysprintMiniStatement(payload);
-            
+
+            if (!res || typeof res !== "object")
+                throw new Error("Invalid server response");
+
             // Set response data and show modal
             setResponseData(res);
             setModalVisible(true);
 
             if (res?.success && res.data?.status) {
+
+                const rawNPCI = res.data?.ministatementlist?.npcidata;
+
+                if (rawNPCI && rawNPCI.length > 0) {
+                    // Parse raw strings into your TransactionItem format
+                    res.data.ministatement = parseNPCIData(rawNPCI);
+
+                    // Extract balance from the last line if available (e.g., "14634.07 CR")
+                    const lastLine = rawNPCI[rawNPCI.length - 1];
+                    if (lastLine.includes('.') && !res.data.balanceamount) {
+                        res.data.balanceamount = lastLine.split(' ')[0];
+                    }
+                }
                 Toast.show({
                     type: "success",
                     text1: "Success",
@@ -338,13 +411,14 @@ const MiniStatement = () => {
                 throw new Error(res?.message || "Mini statement failed");
             }
         } catch (err: any) {
-            console.log("err",err)
+            console.log("err", err)
             Toast.show({
                 type: "error",
                 text1: "Statement Error",
                 text2: err.message || "Network Error",
             });
         } finally {
+            handleFullReset()
             setLoading(false);
         }
     };
@@ -397,9 +471,9 @@ const MiniStatement = () => {
                     </Text>
                 </View>
             </View>
-            
+
             <Text style={styles.transactionNarration}>{item.narration.trim()}</Text>
-            
+
             <View style={styles.transactionFooter}>
                 <Text style={[
                     styles.transactionAmount,
@@ -430,6 +504,7 @@ const MiniStatement = () => {
                         error={touched.mobileno ? errors.mobileno : undefined}
                         onChangeText={(text) => update("mobileno", text)}
                         onBlur={() => handleBlur("mobileno")}
+                        iconStart={Smartphone}
                     />
 
                     {/* Aadhaar */}
@@ -442,82 +517,31 @@ const MiniStatement = () => {
                         error={touched.aadhaar ? errors.aadhaar : undefined}
                         onChangeText={(text) => update("aadhaar", text)}
                         onBlur={() => handleBlur("aadhaar")}
+                        iconStart={Fingerprint}
                     />
 
-                    <Text style={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        color: theme.colors.text.secondary,
-                        marginBottom: 8,
-                        marginTop: 12,
-                    }}>Select Bank</Text>
-
-                    <DropDownPicker
-                        open={bankOpen}
-                        value={form.bankIIN || null}
+                    <CustomDropdown3
+                        label="Select Bank"
+                        value={form.bankIIN}
                         items={bankOptions}
-                        setOpen={setBankOpen}
-                        setValue={(cb) => {
-                            setForm(prev => ({
-                                ...prev,
-                                bankIIN: typeof cb === "function" ? cb(prev.bankIIN) : cb,
-                            }));
-                            // Clear bank error when selection is made
-                            if (errors.bankIIN) {
-                                setErrors(prev => ({ ...prev, bankIIN: undefined }));
-                            }
-                        }}
-                        setItems={setBankOptions}
                         placeholder="Choose your bank"
-                        listMode="SCROLLVIEW"
-                        style={{
-                            borderColor: touched.bankIIN && errors.bankIIN
-                                ? "#EF4444"
-                                : "rgba(0,0,0,0.1)",
-                            backgroundColor: "#FFF",
-                            borderRadius: 14,
-                            borderWidth: 1,
-                            minHeight: 55,
-                            paddingHorizontal: 15,
-                        }}
-                        dropDownContainerStyle={{
-                            backgroundColor: "#FFF",
-                            borderColor: "rgba(0,0,0,0.1)",
-                            borderRadius: 14,
-                            marginTop: 4,
-                        }}
-                        placeholderStyle={{
-                            color: theme.colors.text.secondary,
-                            fontSize: 15,
-                        }}
-                        labelStyle={{
-                            color: theme.colors.text.primary,
-                            fontSize: 15,
-                        }}
-                        disabled={bankOptions.length === 0}
-                        onOpen={() => setTouched(prev => ({ ...prev, bankIIN: true }))}
-                        zIndex={1000}
+                        error={touched.bankIIN ? errors.bankIIN : undefined}
+                        onSelect={(item) =>
+                            setForm(prev => ({ ...prev, bankIIN: item.value }))
+                        }
                     />
-
-                    {touched.bankIIN && errors.bankIIN && (
-                        <Text style={{ color: "#EF4444", fontSize: 12, marginTop: 4 }}>
-                            {errors.bankIIN}
-                        </Text>
-                    )}
 
                     {/* Biometric Scanner with reset key */}
                     <BiometricScanner
-                        key={`biometric-scanner-${form.biometricData}`}
+                        key={biometricKey}
+                        wadh=""
                         onScanSuccess={(data) => {
                             update("biometricData", data);
-                            // Clear biometric error on successful scan
-                            if (errors.biometricData) {
-                                setErrors(prev => ({ ...prev, biometricData: undefined }));
-                            }
+                            setErrors((prev:any) => ({ ...prev, biometricData: undefined }));
                         }}
                         onScanError={() => {
                             update("biometricData", "");
-                            setErrors(prev => ({
+                            setErrors((prev:any) => ({
                                 ...prev,
                                 biometricData: "Biometric scan failed. Please try again."
                             }));
@@ -543,7 +567,7 @@ const MiniStatement = () => {
                         size="large"
                         loading={loading}
                         style={{ marginTop: 20 }}
-                        
+
                     />
                 </AnimatedCard>
             </ScrollView>
@@ -607,7 +631,7 @@ const MiniStatement = () => {
                                         <Text style={styles.transactionsTitle}>
                                             Recent Transactions ({responseData.data.ministatement.length})
                                         </Text>
-                                        
+
                                         <FlatList
                                             data={responseData.data.ministatement}
                                             renderItem={renderTransaction}

@@ -19,6 +19,7 @@ const MORPHO_IMG = require("../../assets/images/Morpho.jpg");
 interface BiometricScannerProps {
   onScanSuccess: (pidData: string) => void;
   onScanError?: (error: string) => void;
+  wadh?: string;
   reset?: boolean; // Add this prop
 }
 
@@ -26,6 +27,7 @@ export const BiometricScanner: React.FC<BiometricScannerProps> = ({
   onScanSuccess,
   onScanError,
   reset = false, // Default to false
+  wadh
 }) => {
   const [selectedDevice, setSelectedDevice] =
     useState<"Mantra" | "Morpho">("Mantra");
@@ -62,7 +64,8 @@ export const BiometricScanner: React.FC<BiometricScannerProps> = ({
         throw new Error("Mantra RD Service not linked");
       }
 
-      const pidXml: string = await MantraRD.captureFingerprint();
+
+      const pidXml: string = await MantraRD.captureFingerprint( wadh|| "");
 
       if (!pidXml || !pidXml.includes("<PidData")) {
         throw new Error("Invalid biometric data received");

@@ -110,7 +110,7 @@ const Aeps2FA = (props: Aeps2FAProps) => {
 
             <AnimatedCard style={styles.card}>
                 <BiometricScanner
-                    // wadh={WADH}
+                   wadh=""
                     onScanSuccess={(data) => {
                         setPidData(data);
                         Toast.show({

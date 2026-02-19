@@ -61,6 +61,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         // 2. Resolve Domain immediately via switch case
         const resolvedDomain = getDomainFromAppName(appName);
         setDomainName(resolvedDomain);
+        console.log("domain",resolvedDomain)
 
         // 3. Update global API headers so subsequent calls are authorized/contextualized
         setApiHeaders({

@@ -6,7 +6,6 @@ import {
     StyleSheet,
     Modal,
     Pressable,
-    TextInput
 } from "react-native";
 import * as SecureStore from "expo-secure-store";
 import Toast from "react-native-toast-message";
@@ -26,14 +25,10 @@ import { AnimatedButton } from "@/components/animated/AnimatedButton";
 import DropDownPicker from "react-native-dropdown-picker";
 import { theme } from "@/theme";
 import { BiometricScanner } from "@/components/ui/BiometricScanner";
-import {
-    X,
-    CheckCircle,
-    XCircle,
-    Printer,
-    Download,
-    ArrowRight
-} from "lucide-react-native";
+import { X, CheckCircle, XCircle, Smartphone, Fingerprint } from "lucide-react-native";
+import CustomDropdown3 from "@/components/ui/CustomDropdwon3";
+
+/* ---------------- TYPES ---------------- */
 
 interface BalanceEnquiryForm {
     mobileno: string;
@@ -48,53 +43,68 @@ interface DropdownItem {
     value: string;
 }
 
-// Response type based on your API response
 interface BalanceEnquiryResponse {
-    success: boolean;
-    code: number;
-    message: string;
-    data: {
-        response_code: number;
-        status: boolean;
-        message: string;
-        ackno: number;
-        amount: number;
-        balanceamount: string;
-        bankrrn: number;
-        bankiin: string;
-        mobile: string;
-        errorcode: number;
+    success?: boolean;
+    code?: number;
+    message?: string;
+    data?: {
+        response_code?: number;
+        status?: boolean;
+        message?: string;
+        ackno?: number;
+        amount?: number;
+        balanceamount?: string;
+        bankrrn?: number;
+        bankiin?: string;
+        mobile?: string;
+        errorcode?: number;
     };
 }
 
+/* ---------------- COMPONENT ---------------- */
+
 const BalanceEnquiry = () => {
-    /* ---------------- STATE ---------------- */
+    /* ---------- STATE ---------- */
 
     const [bankOptions, setBankOptions] = useState<DropdownItem[]>([]);
     const [bankOpen, setBankOpen] = useState(false);
+    const [dropdownKey, setDropdownKey] = useState(0);
+const [biometricKey, setBiometricKey] = useState(0);
+
+const handleFullReset = () => {
+    // 1. Reset Form Fields
+    setForm(prev => ({
+        mobileno: "",
+        aadhaar: "",
+        bankIIN: "",
+        biometricData: "",
+        ipAddress: prev.ipAddress, // Preserve IP
+    }));
+
+    // 2. Clear Validation States
+    setErrors({});
+    setTouched({
+        mobileno: false,
+        aadhaar: false,
+        bankIIN: false,
+        biometricData: false,
+    });
+
+    // 3. Increment Keys to force unmount/remount of internal components
+    setDropdownKey(prev => prev + 1);
+    setBiometricKey(prev => prev + 1);
+};
 
     const [form, setForm] = useState<BalanceEnquiryForm>({
         mobileno: "",
         aadhaar: "",
         bankIIN: "",
         biometricData: "",
-        ipAddress: ""
+        ipAddress: "",
     });
 
-    const [errors, setErrors] = useState<{
-        mobileno?: string;
-        aadhaar?: string;
-        bankIIN?: string;
-        biometricData?: string;
-        ipAddress?: string;
-    }>({});
-
-    const [touched, setTouched] = useState<{
-        mobileno: boolean;
-        aadhaar: boolean;
-        bankIIN: boolean;
-        biometricData: boolean;
-    }>({
+    const [errors, setErrors] = useState<any>({});
+    const [touched, setTouched] = useState<any>({
         mobileno: false,
         aadhaar: false,
         bankIIN: false,
@@ -102,12 +112,12 @@ const BalanceEnquiry = () => {
     });
 
     const [loading, setLoading] = useState(false);
-
-    // Modal states
     const [modalVisible, setModalVisible] = useState(false);
-    const [responseData, setResponseData] = useState<BalanceEnquiryResponse | null>(null);
+    const [responseData, setResponseData] =
+        useState<BalanceEnquiryResponse | null>(null);
 
-    // Animation value for the modal
+    /* ---------- ANIMATION ---------- */
+
     const translateY = useSharedValue(700);
 
     useEffect(() => {
@@ -120,117 +130,36 @@ const BalanceEnquiry = () => {
         transform: [{ translateY: translateY.value }],
     }));
 
-    /* ---------------- HELPERS ---------------- */
+    /* ---------- HELPERS ---------- */
 
     const update = (key: keyof BalanceEnquiryForm, value: string) => {
         setForm(prev => ({ ...prev, [key]: value }));
-        // Clear error for this field when user starts typing
-        if (errors[key as keyof typeof errors]) {
-            setErrors(prev => ({ ...prev, [key]: undefined }));
-        }
+        if (errors[key]) setErrors((p: any) => ({ ...p, [key]: undefined }));
     };
 
-    const handleBlur = (field: keyof typeof touched) => {
-        setTouched(prev => ({ ...prev, [field]: true }));
-        // Validate the field on blur
-        validateField(field);
-    };
+    const validateField = (field: string) => {
+        let msg = "";
 
-    /* ---------------- BANK LIST ---------------- */
-
-    const fetchBankList = async () => {
-        try {
-            const location = await getLatLong();
-            if (!location) {
-                Toast.show({
-                    type: "error",
-                    text1: "Location Required",
-                    text2: "Please enable location permission",
-                });
-                return;
-            }
-
-            const token = await SecureStore.getItemAsync("userToken");
-            if (!token) throw new Error("User not authenticated");
-
-            const response = await paysprinBankList({
-                token,
-                latitude: location.latitude,
-                longitude: location.longitude,
-            });
-
-            if (response?.success) {
-                const list: DropdownItem[] =
-                    response.data.banklist.data.map((b: any) => ({
-                        label: b.bankName,
-                        value: b.iinno,
-                    }));
-
-                setBankOptions(list);
-            } else {
-                throw new Error(response?.message || "Failed to fetch banks");
-            }
-        } catch (err: any) {
-            Toast.show({
-                type: "error",
-                text1: "Bank List Error",
-                text2: err.message || "Network Error",
-            });
-        }
-    };
-
-    useEffect(() => {
-        fetchBankList();
-    }, []);
-
-    useEffect(() => {
-        // Dynamic IP fetch
-        fetch("https://api.ipify.org?format=json")
-            .then(res => res.json())
-            .then(data => update("ipAddress", data.ip))
-            .catch(() => {
-                update("ipAddress", "192.168.1.1"); // Fallback IP
-                console.error("IP fetch failed");
-            });
-    }, []);
-
-    /* ---------------- VALIDATION ---------------- */
-
-    const validateField = (field: keyof typeof touched) => {
-        let errorMessage = "";
-
-        switch (field) {
-            case "mobileno":
-                if (!form.mobileno.trim()) {
-                    errorMessage = "Mobile number is required";
-                } else if (!/^[6-9]\d{9}$/.test(form.mobileno)) {
-                    errorMessage = "Enter valid 10-digit mobile number starting with 6-9";
-                }
-                break;
-
-            case "aadhaar":
-                if (!form.aadhaar.trim()) {
-                    errorMessage = "Aadhaar number is required";
-                } else if (!/^\d{12}$/.test(form.aadhaar)) {
-                    errorMessage = "Enter valid 12-digit Aadhaar number";
-                }
-                break;
-
-            case "bankIIN":
-                if (!form.bankIIN) {
-                    errorMessage = "Please select a bank";
-                }
-                break;
-
-            case "biometricData":
-                if (!form.biometricData) {
-                    errorMessage = "Biometric scan is required";
-                }
-                break;
+        if (field === "mobileno") {
+            if (!/^[6-9]\d{9}$/.test(form.mobileno))
+                msg = "Enter valid 10-digit mobile number";
         }
 
-        setErrors(prev => ({ ...prev, [field]: errorMessage }));
-        return !errorMessage;
+        if (field === "aadhaar") {
+            if (!/^\d{12}$/.test(form.aadhaar))
+                msg = "Enter valid 12-digit Aadhaar number";
+        }
+
+        if (field === "bankIIN" && !form.bankIIN) {
+            msg = "Please select a bank";
+        }
+
+        if (field === "biometricData" && !form.biometricData) {
+            msg = "Biometric scan required";
+        }
+
+        setErrors((p: any) => ({ ...p, [field]: msg }));
+        return !msg;
     };
 
     const validate = () => {
@@ -239,7 +168,6 @@ const BalanceEnquiry = () => {
         const bankValid = validateField("bankIIN");
         const biometricValid = validateField("biometricData");
 
-        // Mark all fields as touched
         setTouched({
             mobileno: true,
             aadhaar: true,
@@ -250,42 +178,68 @@ const BalanceEnquiry = () => {
         return mobileValid && aadhaarValid && bankValid && biometricValid;
     };
 
-    /* ---------------- SUBMIT ---------------- */
+
+    /* ---------- BANK LIST ---------- */
+
+    useEffect(() => {
+        (async () => {
+            try {
+                const location = await getLatLong();
+                const token = await SecureStore.getItemAsync("userToken");
+
+                if (!location || !token) return;
+
+                const res = await paysprinBankList({
+                    token,
+                    latitude: location.latitude,
+                    longitude: location.longitude,
+                });
+
+                if (res?.success) {
+                    setBankOptions(
+                        res.data.banklist.data.map((b: any) => ({
+                            label: b.bankName,
+                            value: b.iinno,
+                        }))
+                    );
+                }
+            } catch {
+                Toast.show({
+                    type: "error",
+                    text1: "Bank List Error",
+                    text2: "Unable to fetch bank list",
+                });
+            }
+        })();
+    }, []);
+
+    /* ---------- IP ---------- */
+
+    useEffect(() => {
+        fetch("https://api.ipify.org?format=json")
+            .then(r => r.json())
+            .then(d => setForm(p => ({ ...p, ipAddress: d.ip })))
+            .catch(() =>
+                setForm(p => ({ ...p, ipAddress: "192.168.1.1" }))
+            );
+    }, []);
+
+    /* ---------- SUBMIT ---------- */
 
     const handleSubmit = async () => {
-        if (!validate()) {
-            Toast.show({
-                type: "error",
-                text1: "Validation Failed",
-                text2: "Please fix the errors before submitting",
-            });
-            return;
-        }
+        if (loading) return;
+        if (!validate()) return;
 
         setLoading(true);
 
         try {
-            // 📍 Get location
             const location = await getLatLong();
-
-            if (!location) {
-                Toast.show({
-                    type: "error",
-                    text1: "Location Required",
-                    text2: "Please enable location permission to continue",
-                });
-                setLoading(false);
-                return;
-            }
-
             const token = await SecureStore.getItemAsync("userToken");
 
-            if (!token) {
-                throw new Error("User not authenticated");
-            }
+            if (!location || !token) throw new Error("Missing requirements");
 
-            const payload = {
-                token: token,
+            const res = await paysprintBalanceEnquiry({
+                token,
                 latitude: location.latitude,
                 longitude: location.longitude,
                 bank: "bank5",
@@ -295,202 +249,118 @@ const BalanceEnquiry = () => {
                 mobilenumber: form.mobileno,
                 adhaarnumber: form.aadhaar,
                 nationalbankidentificationnumber: form.bankIIN,
-            };
+            });
 
-            const res = await paysprintBalanceEnquiry(payload);
+            if (!res || typeof res !== "object")
+                throw new Error("Invalid server response");
 
-            // Set response data and show modal
             setResponseData(res);
             setModalVisible(true);
 
-            if (res?.success && res.data?.status) {
-                Toast.show({
-                    type: "success",
-                    text1: "Success",
-                    text2: "Balance enquiry completed successfully",
-                });
-                // Reset form on success
-                setForm({
+            if (res?.success && res?.data?.status) {
+                Toast.show({ type: "success", text1: "Balance fetched" });
+                setForm(p => ({
+                    ...p,
                     mobileno: "",
                     aadhaar: "",
                     bankIIN: "",
                     biometricData: "",
-                    ipAddress: form.ipAddress, // Keep IP address
-                });
-                setTouched({
-                    mobileno: false,
-                    aadhaar: false,
-                    bankIIN: false,
-                    biometricData: false,
-                });
+                }));
             } else {
-                throw new Error(res?.message || "Balance enquiry failed");
+                throw new Error(res?.data?.message || res?.message);
             }
-        } catch (err: any) {
+        } catch (e: any) {
             Toast.show({
                 type: "error",
-                text1: "Submission Error",
-                text2: err.message || "Network Error",
+                text1: "Error",
+                text2: e.message || "Something went wrong",
             });
         } finally {
+            handleFullReset()
             setLoading(false);
         }
     };
 
-    const formatCurrency = (amount: string) => {
-        return `₹${parseFloat(amount).toFixed(2)}`;
+    /* ---------- FORMAT ---------- */
+
+    const formatCurrency = (val?: string | number) => {
+        if (!val) return "₹0.00";
+        const n = parseFloat(String(val).replace(/,/g, ""));
+        return isNaN(n) ? "₹0.00" : `₹${n.toFixed(2)}`;
     };
 
-    const handlePrint = () => {
-        // Implement print functionality
-        Toast.show({
-            type: "info",
-            text1: "Print",
-            text2: "Print functionality coming soon",
-        });
-    };
+    const isSuccess = responseData?.data?.status === true;
 
-    const handleDownload = () => {
-        // Implement download functionality
-        Toast.show({
-            type: "info",
-            text1: "Download",
-            text2: "Download functionality coming soon",
-        });
-    };
-
-    /* ---------------- UI ---------------- */
+    /* ---------- UI ---------- */
 
     return (
         <>
-            <ScrollView
-                showsVerticalScrollIndicator={false}
-                contentContainerStyle={{ paddingBottom: 20 }}
-            >
-                <AnimatedCard style={{ marginTop: 16, marginHorizontal: 16 }}>
-                    {/* Mobile */}
+            <ScrollView>
+                <AnimatedCard style={{ margin: 16 }}>
                     <CustomInput
                         label="Mobile Number"
                         placeholder="Enter mobile number"
                         value={form.mobileno}
-                        maxLength={10}
                         keyboardType="number-pad"
+                        maxLength={10}
                         error={touched.mobileno ? errors.mobileno : undefined}
-                        onChangeText={(text) => update("mobileno", text)}
-                        onBlur={() => handleBlur("mobileno")}
+                        onChangeText={t => update("mobileno", t)}
+                        iconStart={Smartphone}
                     />
 
-                    {/* Aadhaar */}
                     <CustomInput
                         label="Aadhaar Number"
-                        placeholder="Enter Aadhaar number"
+                        placeholder="Enter aadhaar number"
                         value={form.aadhaar}
-                        maxLength={12}
                         keyboardType="number-pad"
+                        maxLength={12}
                         error={touched.aadhaar ? errors.aadhaar : undefined}
-                        onChangeText={(text) => update("aadhaar", text)}
-                        onBlur={() => handleBlur("aadhaar")}
+                        onChangeText={t => update("aadhaar", t)}
+                        iconStart={Fingerprint}
                     />
 
-                    <Text style={{
-                        fontSize: 14,
-                        fontWeight: "600",
-                        color: theme.colors.text.secondary,
-                        marginBottom: 8,
-                        marginTop: 12,
-                    }}>Select Bank</Text>
-
-                    <DropDownPicker
-                        open={bankOpen}
-                        value={form.bankIIN || null}
+                    <CustomDropdown3
+                        label="Select Bank"
+                        value={form.bankIIN}
                         items={bankOptions}
-                        setOpen={setBankOpen}
-                        setValue={(cb) => {
-                            setForm(prev => ({
-                                ...prev,
-                                bankIIN: typeof cb === "function" ? cb(prev.bankIIN) : cb,
-                            }));
-                            // Clear bank error when selection is made
-                            if (errors.bankIIN) {
-                                setErrors(prev => ({ ...prev, bankIIN: undefined }));
-                            }
-                        }}
-                        setItems={setBankOptions}
                         placeholder="Choose your bank"
-                        listMode="SCROLLVIEW"
-                        style={{
-                            borderColor: touched.bankIIN && errors.bankIIN
-                                ? "#EF4444"
-                                : "rgba(0,0,0,0.1)",
-                            backgroundColor: "#FFF",
-                            borderRadius: 14,
-                            borderWidth: 1,
-                            minHeight: 55,
-                            paddingHorizontal: 15,
-                        }}
-                        dropDownContainerStyle={{
-                            backgroundColor: "#FFF",
-                            borderColor: "rgba(0,0,0,0.1)",
-                            borderRadius: 14,
-                            marginTop: 4,
-                        }}
-                        placeholderStyle={{
-                            color: theme.colors.text.secondary,
-                            fontSize: 15,
-                        }}
-                        labelStyle={{
-                            color: theme.colors.text.primary,
-                            fontSize: 15,
-                        }}
-                        disabled={bankOptions.length === 0}
-                        onOpen={() => setTouched(prev => ({ ...prev, bankIIN: true }))}
-                        zIndex={1000}
+                        error={touched.bankIIN ? errors.bankIIN : undefined}
+                        onSelect={(item) =>
+                            setForm(prev => ({ ...prev, bankIIN: item.value }))
+                        }
                     />
 
-                    {touched.bankIIN && errors.bankIIN && (
-                        <Text style={{ color: "#EF4444", fontSize: 12, marginTop: 4 }}>
-                            {errors.bankIIN}
-                        </Text>
-                    )}
-
-                    {/* Biometric Scanner with reset key */}
                     <BiometricScanner
-                        key={`biometric-scanner-${form.biometricData}`} // Add this line
+                        key={biometricKey}
+                        wadh=""
                         onScanSuccess={(data) => {
                             update("biometricData", data);
-                            // Clear biometric error on successful scan
-                            if (errors.biometricData) {
-                                setErrors(prev => ({ ...prev, biometricData: undefined }));
-                            }
+                            setErrors((prev:any) => ({ ...prev, biometricData: undefined }));
                         }}
                         onScanError={() => {
                             update("biometricData", "");
-                            setErrors(prev => ({
+                            setErrors((prev:any) => ({
                                 ...prev,
                                 biometricData: "Biometric scan failed. Please try again."
                             }));
                         }}
                     />
-
                     {touched.biometricData && errors.biometricData && (
                         <Text style={{
                             color: "#EF4444",
-                            fontSize: 12,
+                            fontSize: 11,
                             marginTop: 4,
-                            marginBottom: 8
+                            fontWeight: "600",
                         }}>
                             {errors.biometricData}
                         </Text>
                     )}
 
-                    {/* Submit */}
                     <AnimatedButton
                         title="Submit"
-                        onPress={handleSubmit}
-                        variant="primary"
-                        size="large"
                         loading={loading}
-                        style={{ marginTop: 20 }}
+                        onPress={handleSubmit}
+                        style={{marginTop:16}}
                     />
                 </AnimatedCard>
             </ScrollView>
@@ -568,7 +438,7 @@ const BalanceEnquiry = () => {
                                     <View style={styles.detailRow}>
                                         <Text style={styles.detailLabel}>Amount:</Text>
                                         <Text style={styles.detailValue}>
-                                            {formatCurrency(responseData.data?.amount.toString() || "0")}
+                                            {formatCurrency(responseData?.data?.balanceamount)}
                                         </Text>
                                     </View>
 

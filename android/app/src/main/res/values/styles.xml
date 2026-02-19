@@ -2,18 +2,35 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
 
     <!-- ===================== -->
-    <!-- Main App Theme -->
+    <!-- Main App Theme - MaterialComponents (Required for BankIT SDK) -->
     <!-- ===================== -->
-    <style name="AppTheme" parent="Theme.AppCompat.DayNight.NoActionBar">
-        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">true</item>
-        <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+    <style name="AppTheme" parent="Theme.MaterialComponents.DayNight.NoActionBar">
+        <!-- Primary colors - Add these to colors.xml if missing -->
         <item name="colorPrimary">@color/colorPrimary</item>
-        <item name="android:statusBarColor">#FFFFFF</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+        
+        <!-- Status bar -->
+        <item name="android:statusBarColor">@color/colorPrimary</item>
+        <item name="android:windowLightStatusBar">false</item>
+        
+        <!-- Background -->
+        <item name="android:windowBackground">@color/white</item>
+        
+        <!-- EditText background for React Native -->
+        <item name="android:editTextBackground">@drawable/rn_edit_text_material</item>
+        
+        <!-- Navigation bar contrast -->
+        <item name="android:enforceNavigationBarContrast" tools:targetApi="29">true</item>
 
-        <!-- Android 12+ Splash DISABLED -->
+        <!-- Android 12+ Splash Screen (disabled) -->
         <item name="android:windowSplashScreenBackground">@android:color/transparent</item>
         <item name="android:windowSplashScreenAnimatedIcon">@null</item>
         <item name="android:windowSplashScreenAnimationDuration">0</item>
+        
+        <!-- Material Components specific styles (required for TextInputLayout) -->
+        <item name="materialButtonStyle">@style/Widget.MaterialComponents.Button</item>
+        <item name="textInputStyle">@style/Widget.MaterialComponents.TextInputLayout.FilledBox</item>
     </style>
 
     <!-- ===================== -->

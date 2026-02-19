@@ -1,11 +1,17 @@
+import { paysprintOnboard } from "@/api/paysprint.api";
 import { AnimatedButton } from "@/components/animated/AnimatedButton";
 import { AnimatedCard } from "@/components/animated/AnimatedCard"
+import CustomDatePicker from "@/components/ui/CustomDatePicker";
 import CustomInput from "@/components/ui/CustomInput";
 import { theme } from "@/theme"
-import { useState } from "react";
+import { getLatLong } from "@/utils/location";
+import { Fingerprint, Mail, Smartphone } from "lucide-react-native";
+import { useEffect, useState } from "react";
 import { Text, View } from "react-native"
+import * as SecureStore from "expo-secure-store";
 
 import { NativeModules } from 'react-native';
+import Toast from "react-native-toast-message";
 
 const { PaysprintModule } = NativeModules;
 
@@ -14,27 +20,35 @@ type PaysprintForm = {
     pApiKey: string;
     mCode: string;
     mobile: string;
-    lat: string;
-    lng: string;
     pipe: string;
     firm: string;
     email: string;
+    aadhaar: string;
+    dob: string;
 };
 
 type OnboardingScreenProps = {
     merchantCode: string;
-    lat: string;
-    lng: string;
+     fetchStatus: () => void;
+
 
 }
 
 const OnboardingScreen = (props: OnboardingScreenProps) => {
 
     const [loading, setLoading] = useState(false)
+    const [lat, setLat] = useState("")
+    const [lng, setLng] = useState("")
     const [errors, setErrors] = useState<{
         mobile?: string;
         email?: string;
+        aadhaar?: string;
+        dob?: string;
     }>({});
+
+
+
+
 
     const validate = () => {
         const newErrors: typeof errors = {};
@@ -49,33 +63,57 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
         // Email validation
         if (!form.email.trim()) {
             newErrors.email = "Email is required";
-        } else if (
-            !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)
-        ) {
+        } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) {
             newErrors.email = "Enter a valid email address";
         }
 
-        setErrors(newErrors);
+        // Aadhaar validation
+        if (!form.aadhaar.trim()) {
+            newErrors.aadhaar = "Aadhaar number is required";
+        } else if (!/^[2-9]{1}[0-9]{11}$/.test(form.aadhaar)) {
+            newErrors.aadhaar = "Enter a valid 12-digit Aadhaar number";
+        }
 
+        // DOB validation
+        if (!form.dob) {
+            newErrors.dob = "Date of birth is required";
+        } else {
+            const dobDate = new Date(form.dob);
+            const today = new Date();
+
+            let age = today.getFullYear() - dobDate.getFullYear();
+            const monthDiff = today.getMonth() - dobDate.getMonth();
+
+            if (
+                monthDiff < 0 ||
+                (monthDiff === 0 && today.getDate() < dobDate.getDate())
+            ) {
+                age--;
+            }
+
+            if (age < 18) {
+                newErrors.dob = "You must be at least 18 years old";
+            }
+        }
+
+        setErrors(newErrors);
         return Object.keys(newErrors).length === 0;
     };
 
 
-
-
-
-
     const [form, setForm] = useState<PaysprintForm>({
-        pId: 'PS002194',
-        pApiKey: 'UFMwMDIxOTQ5MDdkOWI4N2QxZmRhNzEzMWUwZWZkOTU5Njc3MmI0Zg==',
-        mCode: props.merchantCode,
+        pId: '',
+        pApiKey: '',
+        mCode: "",
         mobile: '',
-        lat: props.lat,
-        lng: props.lng,
-        pipe: 'bank1',
-        firm: 'Pinepe',
+        pipe: 'bank5',
+        firm: '',
         email: '',
+        aadhaar: "",
+        dob: ""
     });
+
+
 
     const handleSubmit = async () => {
         if (!validate()) return;
@@ -83,25 +121,81 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
         setLoading(true);
 
         try {
+            const location = await getLatLong();
 
-            const res = await PaysprintModule.startPaysprint(
-                form.pId,
-                form.pApiKey,
-                form.mCode,
+            if (!location) {
+                Toast.show({
+                    type: "error",
+                    text1: "Location Required",
+                    text2: "Please enable location permission to continue",
+                });
+                return;
+            }
+
+            const token = await SecureStore.getItemAsync("userToken");
+            if (!token) {
+                throw new Error("User not authenticated");
+            }
+
+            // 🔹 Call API
+            const response: any = await paysprintOnboard({
+                token,
+                latitude: location.latitude,
+                longitude: location.longitude,
+                mobile: form.mobile,
+                aadhaar: form.aadhaar,
+                email: form.email,
+                dob: form.dob,
+                callback: "https://app.pinepe.in/",
+            });
+
+            // 🔹 Extract values ONCE
+            const partnerId = response.credentials.partner_id;
+            const apiKey = response.credentials.jwt_secret;
+            const firm = response.credentials.firm;
+            const merchantCode = response.response.merchantcode;
+
+            // 🔹 Update state (UI purpose only)
+            setForm(prev => ({
+                ...prev,
+                pId: partnerId,
+                pApiKey: apiKey,
+                firm: firm,
+                mCode: merchantCode,
+            }));
+
+            setLat(String(location.latitude));
+            setLng(String(location.longitude));
+
+            // 🔹 CALL SDK WITH REAL VALUES (NOT STATE)
+            const sdkResult = await PaysprintModule.startPaysprint(
+                partnerId,
+                apiKey,
+                merchantCode,
                 form.mobile,
-                form.lat,
-                form.lng,
+                String(location.latitude),
+                String(location.longitude),
                 form.pipe,
-                form.firm,
+                firm,
                 form.email
             );
 
-            console.log("sdk result",res)
+            props.fetchStatus();
 
+            console.log("sdk result", sdkResult);
+
+        } catch (err) {
+            console.error(err);
+            Toast.show({
+                type: "error",
+                text1: "Onboarding Failed",
+                text2: "Please try again",
+            });
         } finally {
             setLoading(false);
         }
     };
+
 
 
     const update = (key: keyof PaysprintForm, value: string) => {
@@ -128,6 +222,7 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
                                     setErrors(prev => ({ ...prev, mobile: undefined }));
                                 }
                             }}
+                            iconStart={Smartphone}
                         />
 
                         <CustomInput
@@ -143,7 +238,42 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
                                     setErrors(prev => ({ ...prev, email: undefined }));
                                 }
                             }}
+                            iconStart={Mail}
                         />
+                        <CustomInput
+                            label="Aadhaar Number"
+                            placeholder="Enter aadhhar number"
+                            value={form.aadhaar}
+                            keyboardType="number-pad"
+                            error={errors.aadhaar}
+                            maxLength={12}
+                            onChangeText={(text: string) => {
+                                update("aadhaar", text);
+                                if (errors.aadhaar) {
+                                    setErrors(prev => ({ ...prev, aadhaar: undefined }));
+                                }
+                            }}
+                            iconStart={Fingerprint}
+                        />
+
+                        <CustomDatePicker
+                            label="Date of Birth"
+                            dateValue={form.dob}
+                            error={errors.dob}
+                            onDateChange={(formattedDate) => {
+                                if (formattedDate && formattedDate.includes("-")) {
+                                    const [day, month, year] = formattedDate.split("-");
+                                    update("dob", `${year}-${month}-${day}`);
+                                } else {
+                                    update("dob", formattedDate);
+                                }
+
+                                if (errors.dob) {
+                                    setErrors(prev => ({ ...prev, dob: undefined }));
+                                }
+                            }}
+                        />
+
 
 
                         <AnimatedButton
