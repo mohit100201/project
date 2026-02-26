@@ -4,7 +4,7 @@ import { theme } from '@/theme'
 import { getLatLong } from '@/utils/location'
 import { RotateCcw, Search, Send, User } from 'lucide-react-native'
 import { useEffect, useState } from 'react'
-import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator } from 'react-native'
+import { View, Text, ScrollView, TouchableOpacity, ActivityIndicator, KeyboardAvoidingView, Platform } from 'react-native'
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
@@ -29,7 +29,7 @@ interface BeneficiaryDropdownItem {
 
 const RequestPayout = () => {
     const params = useLocalSearchParams();
-    const {heading}=params
+    const { heading } = params
     const [beneficiary, setBeneficiary] = useState("")
     const [accountHolderName, setAccountHolderName] = useState("")
     const [bankName, setBankName] = useState("")
@@ -41,8 +41,8 @@ const RequestPayout = () => {
     const [transferModeValue, setTransferModeValue] = useState("All");
     const [transferMode, setTransferMode] = useState([]);
     const [transferModeLoading, setTransferModeLoading] = useState(false);
-     
-   
+
+
     const [openBene, setOpenBene] = useState(false);
     const [beneValue, setBeneValue] = useState(null);
     const [beneList, setBeneList] = useState<BeneficiaryDropdownItem[]>([]);
@@ -70,7 +70,7 @@ const RequestPayout = () => {
             }
 
             const res = await getPaymentMethodsApi({
-               
+
                 latitude: location.latitude,
                 longitude: location.longitude,
                 token,
@@ -162,72 +162,110 @@ const RequestPayout = () => {
         setTransferAmount("");
         setTransferModeValue("All");
 
-        // 5. Show Toast
-        Toast.show({
-            type: 'success',
-            text1: 'Form Reset',
-            text2: 'All fields have been cleared successfully.',
-            visibilityTime: 3000,
-        });
+        
     };
 
    const handleTransfer = async () => {
-    // 1. Validation before hitting API
-    if (!transferAmount || !beneValue || !transferModeValue || transferModeValue === "All") {
-        Toast.show({ type: 'error', text1: 'Input Error', text2: 'Please check Amount, Mode, and Beneficiary selection.' });
+    // 1️⃣ Frontend Validation (Match Backend Rules)
+    if (!transferAmount || Number(transferAmount) < 100) {
+        Toast.show({
+            type: 'error',
+            text1: 'Validation Error',
+            text2: 'Amount must be at least ₹100',
+        });
+        return;
+    }
+
+    if (!beneValue || !transferModeValue || transferModeValue === "All") {
+        Toast.show({
+            type: 'error',
+            text1: 'Input Error',
+            text2: 'Please select Transfer Mode and Beneficiary',
+        });
+        return;
+    }
+
+    if (!remark || remark.trim().length < 3) {
+        Toast.show({
+            type: 'error',
+            text1: 'Validation Error',
+            text2: 'Remarks must be at least 3 characters',
+        });
         return;
     }
 
     if (!merchantProfile) {
-        Toast.show({ type: 'error', text1: 'Profile Error', text2: 'Merchant data not loaded yet.' });
+        Toast.show({
+            type: 'error',
+            text1: 'Profile Error',
+            text2: 'Merchant profile not loaded yet',
+        });
         return;
     }
 
     try {
         setIsSubmitting(true);
 
+        // 2️⃣ Location & Auth
         const location = await getLatLong();
         const token = await SecureStore.getItemAsync("userToken");
 
         if (!location || !token) {
-            Toast.show({ type: 'error', text1: 'Auth Error', text2: 'Session or Location invalid.' });
+            Toast.show({
+                type: 'error',
+                text1: 'Auth Error',
+                text2: 'Session expired or location unavailable',
+            });
             return;
         }
 
-
-        // 2. Exact Postman Mapping
+        // 3️⃣ Payload (Exact Postman Mapping)
         const payload = {
-            amount: Number(transferAmount),        // Numeric: 1
-            transferMode: transferModeValue,       // String: "IMPS"
-            bankName: bankName,                    // String: "Bank of Baroda"
-            bankAccount: String(accountNumber),    // String: "58088100000416"
-            ifsc: IFSCCode.trim().toUpperCase(),   // String: "BARB0GUSAIN"
-            phone: String(merchantProfile.phone),  // String: "8952006412"
-            name: accountHolderName,               // String: "Mahaveer Prasad Suthar"
-            email: merchantProfile.email,          // String: "gusaisar@gmail.com"
-            remarks: remark.trim() || "Test payout transfer", 
-            recipient_id: String(beneValue),       // String: "8"
+            amount: Number(transferAmount),
+            transferMode: transferModeValue,
+            bankName: bankName,
+            bankAccount: String(accountNumber),
+            ifsc: IFSCCode.trim().toUpperCase(),
+            phone: String(merchantProfile.phone),
+            name: accountHolderName,
+            email: merchantProfile.email,
+            remarks: remark.trim(),
+            recipient_id: String(beneValue),
         };
 
-        // DEBUG: Check this log in your terminal to see if it matches Postman exactly
-
+        // 4️⃣ API Call
         const res = await doPayoutTransferApi({
             token,
             latitude: location.latitude.toString(),
             longitude: location.longitude.toString(),
-            payload
+            payload,
         });
 
-        if (res.success) {
-            Toast.show({ type: 'success', text1: 'Success', text2: res.message });
+        // 5️⃣ Success / Error Handling
+        if (res?.success) {
+            Toast.show({
+                type: 'success',
+                text1: 'Transfer Successful',
+                text2: res.message || 'Amount transferred successfully',
+            });
             handleReset();
         } else {
-            // Check for Laravel-style validation errors object
-            const detailedError = res.errors ? Object.values(res.errors).flat().join(", ") : res.message;
-            Toast.show({ type: 'error', text1: 'Validation Failed', text2: detailedError });
+            const errorMessage = res?.errors
+                ? Object.values(res.errors).flat().join(', ')
+                : res?.message || 'Transfer failed';
+
+            Toast.show({
+                type: 'error',
+                text1: 'Transfer Failed',
+                text2: errorMessage,
+            });
         }
     } catch (error: any) {
-        Toast.show({ type: 'error', text1: 'System Error', text2: error.message });
+        Toast.show({
+            type: 'error',
+            text1: 'System Error',
+            text2: error?.message || 'Something went wrong',
+        });
     } finally {
         setIsSubmitting(false);
     }
@@ -240,7 +278,7 @@ const RequestPayout = () => {
             if (!location || !token) return;
 
             const res = await getProfileApi({
-                
+
                 latitude: location.latitude.toString(),
                 longitude: location.longitude.toString(),
                 token,
@@ -264,139 +302,144 @@ const RequestPayout = () => {
     }, []);
     return (
         <View style={{ flex: 1, padding: 16 }}>
-            <Text style={{ fontSize: 20, fontWeight: "600" }}>{heading?heading:"Send Payout Amount"}</Text>
-            <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false} >
-                <View style={{ zIndex: 5000 }}>
-                    <CustomDropdown
-                        label="Select Beneficiary"
-                        placeholder="Search or Select Beneficiary"
-                        open={openBene}
-                        value={beneValue}
-                        items={beneList}
-                        setOpen={setOpenBene}
-                        setValue={handleBeneSelect} // This handles the auto-fill
-                        loading={beneLoading}
-                        searchable={true}
-                        zIndex={5000}
+            <Text style={{ fontSize: 20, fontWeight: "600" }}>{heading ? heading : "Send Payout Amount"}</Text>
+            <KeyboardAvoidingView
+                style={{ flex: 1 }}
+                behavior={Platform.OS === "ios" ? "padding" : "height"}
+                keyboardVerticalOffset={Platform.OS === "ios" ? 64 : 0}
+            >
+                <ScrollView style={{ marginTop: 16 }} showsVerticalScrollIndicator={false} >
+                    <View style={{ zIndex: 5000 }}>
+                        <CustomDropdown
+                            label="Select Beneficiary"
+                            placeholder="Search or Select Beneficiary"
+                            open={openBene}
+                            value={beneValue}
+                            items={beneList}
+                            setOpen={setOpenBene}
+                            setValue={handleBeneSelect} // This handles the auto-fill
+                            loading={beneLoading}
+                            searchable={true}
+                            zIndex={5000}
+                        />
+                    </View>
+                    <CustomInput
+                        label="Account Holder Name"
+                        placeholder="Account Holder Name"
+                        value={accountHolderName}
+                        onChangeText={setAccountHolderName}
+                        editable={false}
                     />
-                </View>
-                <CustomInput
-                    label="Account Holder Name"
-                    placeholder="Account Holder Name"
-                    value={accountHolderName}
-                    onChangeText={setAccountHolderName}
-                    editable={false}
-                />
-                <CustomInput
-                    label="Bank Name"
-                    placeholder="Bank Name"
-                    value={bankName}
-                    onChangeText={setBankName}
-                    editable={false}
-                />
-                <CustomInput
-                    label="Account Number"
-                    placeholder="Account Number"
-                    value={accountNumber}
-                    onChangeText={setAccountNumber}
-                    editable={false}
-                />
-                <CustomInput
-                    label="IFSC Code"
-                    placeholder="IFSC Code"
-                    value={IFSCCode}
-                    onChangeText={setIFSCCode}
-                    editable={false}
-                />
-                <CustomInput
-                    label="Remarks"
-                    placeholder="Remarks"
-                    value={remark}
-                    onChangeText={setRemark}
-                />
-                <CustomInput
-                    label="Enter Transfer Amount"
-                    placeholder="Enter Transfer Amount"
-                    value={transferAmount}
-                    onChangeText={setTransferAmount}
-                    keyboardType='decimal-pad'
-                />
-                <CustomDropdown
-                    label="Status"
-                    open={openTransferMode}
-                    value={transferModeValue}
-                    items={transferMode}
-                    setOpen={setOpenTransferMode}
-                    setValue={setTransferModeValue}
-                    placeholder="Select Transfer Mode"
-                    zIndex={3000}
-                />
-                <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, gap: 12 }}>
-                    {/* Reset Button */}
-                    <TouchableOpacity
-                        style={{
-                            flex: 1,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            borderWidth: 1,
-                            borderColor: "rgba(0,0,0,0.1)", // Consistent with your inputs
-                            borderRadius: 14,                // Consistent 14px radius
-                            height: 55,                      // Consistent height
-                            backgroundColor: '#FFF',
-                            gap: 8
-                        }}
-                        activeOpacity={0.7}
-                        onPress={handleReset}
-                    >
-                        <RotateCcw size={18} color={theme.colors.text.secondary} />
-                        <Text style={{
-                            color: theme.colors.text.secondary,
-                            fontWeight: '600',
-                            fontSize: 15
-                        }}>
-                            Reset
-                        </Text>
-                    </TouchableOpacity>
-
-                    {/* Do Payout Button */}
-
-                    <TouchableOpacity
-                        style={{
-                            flex: 1,
-                            flexDirection: 'row',
-                            alignItems: 'center',
-                            justifyContent: 'center',
-                            // Darken or lighten the button when loading
-                            backgroundColor: isSubmitting ? theme.colors.primary[300] : theme.colors.primary[500],
-                            borderRadius: 14,
-                            height: 55,
-                            gap: 8,
-                            elevation: isSubmitting ? 0 : 2, // Remove shadow when pressed/loading
-                        }}
-                        activeOpacity={0.8}
-                        onPress={handleTransfer}
-                        disabled={isSubmitting} // Disable clicks while loading
-                    >
-                        {isSubmitting ? (
-                            // Show only the loader or loader + text
-                            <>
-                                <ActivityIndicator size="small" color="#FFF" />
-                                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15 }}>
-                                    Processing...
-                                </Text>
-                            </>
-                        ) : (
-                            // Show normal text when not loading
-                            <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15 }}>
-                                Do Payout
+                    <CustomInput
+                        label="Bank Name"
+                        placeholder="Bank Name"
+                        value={bankName}
+                        onChangeText={setBankName}
+                        editable={false}
+                    />
+                    <CustomInput
+                        label="Account Number"
+                        placeholder="Account Number"
+                        value={accountNumber}
+                        onChangeText={setAccountNumber}
+                        editable={false}
+                    />
+                    <CustomInput
+                        label="IFSC Code"
+                        placeholder="IFSC Code"
+                        value={IFSCCode}
+                        onChangeText={setIFSCCode}
+                        editable={false}
+                    />
+                    <CustomInput
+                        label="Remarks"
+                        placeholder="Remarks"
+                        value={remark}
+                        onChangeText={setRemark}
+                    />
+                    <CustomInput
+                        label="Enter Transfer Amount"
+                        placeholder="Enter Transfer Amount"
+                        value={transferAmount}
+                        onChangeText={setTransferAmount}
+                        keyboardType='decimal-pad'
+                    />
+                    <CustomDropdown
+                        label="Status"
+                        open={openTransferMode}
+                        value={transferModeValue}
+                        items={transferMode}
+                        setOpen={setOpenTransferMode}
+                        setValue={setTransferModeValue}
+                        placeholder="Select Transfer Mode"
+                        zIndex={3000}
+                    />
+                    <View style={{ flexDirection: 'row', justifyContent: 'space-between', marginTop: 24, gap: 12 }}>
+                        {/* Reset Button */}
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                borderWidth: 1,
+                                borderColor: "rgba(0,0,0,0.1)", // Consistent with your inputs
+                                borderRadius: 14,                // Consistent 14px radius
+                                height: 55,                      // Consistent height
+                                backgroundColor: '#FFF',
+                                gap: 8
+                            }}
+                            activeOpacity={0.7}
+                            onPress={handleReset}
+                        >
+                            <RotateCcw size={18} color={theme.colors.text.secondary} />
+                            <Text style={{
+                                color: theme.colors.text.secondary,
+                                fontWeight: '600',
+                                fontSize: 15
+                            }}>
+                                Reset
                             </Text>
-                        )}
-                    </TouchableOpacity>
-                </View>
-                <View style={{ height: 130 }} />
-            </ScrollView>
+                        </TouchableOpacity>
 
+                        {/* Do Payout Button */}
+
+                        <TouchableOpacity
+                            style={{
+                                flex: 1,
+                                flexDirection: 'row',
+                                alignItems: 'center',
+                                justifyContent: 'center',
+                                // Darken or lighten the button when loading
+                                backgroundColor: isSubmitting ? theme.colors.primary[300] : theme.colors.primary[500],
+                                borderRadius: 14,
+                                height: 55,
+                                gap: 8,
+                                elevation: isSubmitting ? 0 : 2, // Remove shadow when pressed/loading
+                            }}
+                            activeOpacity={0.8}
+                            onPress={handleTransfer}
+                            disabled={isSubmitting} // Disable clicks while loading
+                        >
+                            {isSubmitting ? (
+                                // Show only the loader or loader + text
+                                <>
+                                    <ActivityIndicator size="small" color="#FFF" />
+                                    <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15 }}>
+                                        Processing...
+                                    </Text>
+                                </>
+                            ) : (
+                                // Show normal text when not loading
+                                <Text style={{ color: '#FFF', fontWeight: '700', fontSize: 15 }}>
+                                    Do Payout
+                                </Text>
+                            )}
+                        </TouchableOpacity>
+                    </View>
+                    <View style={{ height: 130 }} />
+                </ScrollView>
+            </KeyboardAvoidingView>
         </View>
     )
 }

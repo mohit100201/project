@@ -93,44 +93,39 @@ android {
         minSdkVersion rootProject.ext.minSdkVersion
         targetSdkVersion rootProject.ext.targetSdkVersion
         versionCode 1
-        versionName "1.0.0"
+        versionName "1.0.2"
         multiDexEnabled true
 
         buildConfigField "String", "REACT_NATIVE_RELEASE_LEVEL", "\"${findProperty('reactNativeReleaseLevel') ?: 'stable'}\""
     }
 
-//      flavorDimensions "default"
-//         productFlavors {
+     flavorDimensions "default"
+        productFlavors {
 
-//     pinepe {
-//         dimension "default"
-//         applicationIdSuffix ".pinepe"
+    pinepe {
+        dimension "default"
+        applicationIdSuffix ".pinepe"
         
-//     }
+    }
 
-//     cashpe {
-//         dimension "default"
-//         applicationIdSuffix ".cashpe"
+    cashpe {
+        dimension "default"
+        applicationIdSuffix ".cashpe"
         
-//     }
+    }
 
-//     laxmeepay {
-//         dimension "default"
-//         applicationIdSuffix ".laxmeepay"
+    laxmeepay {
+        dimension "default"
+        applicationIdSuffix ".laxmeepay"
        
-//     }
+    }
 
-//     nkpay {
-//         dimension "default"
-//         applicationIdSuffix ".nkpay"
+    nkpay {
+        dimension "default"
+        applicationIdSuffix ".nkpay"
         
-//     }
-// }
-
-
-
-
-
+    }
+}
 
     signingConfigs {
         debug {

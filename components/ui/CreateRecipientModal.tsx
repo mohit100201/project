@@ -7,6 +7,8 @@ import {
   Pressable,
   Keyboard,
   TouchableWithoutFeedback,
+  KeyboardAvoidingView,
+  Platform,
 } from "react-native";
 import Animated, {
   useSharedValue,
@@ -16,7 +18,6 @@ import Animated, {
 } from "react-native-reanimated";
 import { X } from "lucide-react-native";
 import Toast from "react-native-toast-message"; // 1. Import Toast
-import { KeyboardAwareScrollView } from "react-native-keyboard-aware-scroll-view";
 import * as SecureStore from "expo-secure-store";
 import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
@@ -156,14 +157,11 @@ export default function CreateRecipientModal({
               </Pressable>
             </View>
 
-            <KeyboardAwareScrollView
-              enableOnAndroid
-              keyboardShouldPersistTaps="handled"
-              showsVerticalScrollIndicator={false}
-              extraScrollHeight={100}
-              nestedScrollEnabled={true}
-              contentContainerStyle={{ paddingBottom: 40 }}
-            >
+             <KeyboardAvoidingView
+                    behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+                    style={{ flex: 1,
+      backgroundColor: theme.colors.background.main,}}
+                  >
               <CustomInput label="Recipient Name" placeholder="Enter Name" value={name} onChangeText={setName} />
               <CustomInput label="Mobile" placeholder="Enter Mobile Number" keyboardType="number-pad" maxLength={10} value={mobile} onChangeText={setMobile} />
               
@@ -191,7 +189,7 @@ export default function CreateRecipientModal({
                 <Pressable style={styles.cancelBtn} onPress={onClose}><Text style={styles.cancelText}>Cancel</Text></Pressable>
                 <Pressable style={styles.submitBtn} onPress={handleSubmit}><Text style={styles.submitText}>Add Recipient</Text></Pressable>
               </View>
-            </KeyboardAwareScrollView>
+            </KeyboardAvoidingView>
           </Animated.View>
         </View>
       </TouchableWithoutFeedback>

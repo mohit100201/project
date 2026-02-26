@@ -170,33 +170,38 @@ const handleFullReset = () => {
         }
     };
 
-    const parseNPCIData = (data: string[]): TransactionItem[] => {
-        if (!data || data.length === 0) return [];
+   const parseNPCIData = (data: string[]): TransactionItem[] => {
+  if (!Array.isArray(data)) return [];
 
-        return data
-            .filter(row => row.includes('DR') || row.includes('CR')) // Filter out balance line
-            .map(row => {
-                // Raw: "/02/26DR TO TRANSFER   000000099900"
-                const date = row.substring(0, 6).replace(/\//g, '').trim(); // "02/26"
-                const type = row.includes('CR') ? 'C' : 'D';
-                const typeIndex = row.indexOf(type === 'C' ? 'CR' : 'DR');
+  return data
+    .filter(row => row.startsWith("/")) // Only process rows that start with a date slash
+    .map(row => {
+      // Input: "/12/25CR CREDIT INTERES000000005500"
+      
+      // 1. Clean Date: Remove leading slash and format as DD/MM
+      const rawDate = row.substring(1, 6); // "12/25"
+      
+      const txnType = row.includes("CR") ? "C" : "D";
+      const typeMarker = txnType === "C" ? "CR" : "DR";
+      const typeIndex = row.indexOf(typeMarker);
 
-                // Narration is between the Type and the Amount
-                const narration = row.substring(typeIndex + 2, row.length - 12).trim();
+      // 2. Extract Narration: Between CR/DR and the amount
+      const narration = row
+        .substring(typeIndex + 2, row.length - 12)
+        .trim();
 
-                // Amount is the last 12 digits (in paisa)
-                const amountRaw = row.substring(row.length - 12);
-                const amount = parseFloat(amountRaw) / 100;
+      // 3. Extract Amount: Last 12 digits are paisa
+      const amountPaisa = row.substring(row.length - 12);
+      const amount = parseInt(amountPaisa, 10) / 100;
 
-                return {
-                    date: row.substring(0, 6), // Keeps "/02/26"
-                    amount,
-                    txnType: type,
-                    narration: narration || "Transfer"
-                };
-            });
-    };
-
+      return {
+        date: rawDate, // Now "12/25" instead of "/12/25"
+        amount,
+        txnType,
+        narration: narration || "Bank Transaction",
+      };
+    });
+};
     const handleBlur = (field: keyof typeof touched) => {
         setTouched(prev => ({ ...prev, [field]: true }));
         // Validate the field on blur
@@ -319,109 +324,114 @@ const handleFullReset = () => {
 
     /* ---------------- SUBMIT ---------------- */
 
-    const handleSubmit = async () => {
-         if (loading) return;
-        if (!validate()) {
-            Toast.show({
-                type: "error",
-                text1: "Validation Failed",
-                text2: "Please fix the errors before submitting",
-            });
-            return;
-        }
+   const handleSubmit = async () => {
+  if (loading) return;
 
-        setLoading(true);
+  if (!validate()) {
+    Toast.show({
+      type: "error",
+      text1: "Validation Failed",
+      text2: "Please fix the errors before submitting",
+    });
+    return;
+  }
 
-        try {
-            // 📍 Get location
-            const location = await getLatLong();
+  setLoading(true);
 
-            if (!location) {
-                Toast.show({
-                    type: "error",
-                    text1: "Location Required",
-                    text2: "Please enable location permission to continue",
-                });
-                setLoading(false);
-                return;
-            }
+  try {
+    // 📍 Get location
+    const location = await getLatLong();
+    if (!location) {
+      Toast.show({
+        type: "error",
+        text1: "Location Required",
+        text2: "Please enable location permission to continue",
+      });
+      return;
+    }
 
-            const token = await SecureStore.getItemAsync("userToken");
+    // 🔐 Token
+    const token = await SecureStore.getItemAsync("userToken");
+    if (!token) {
+      throw new Error("User not authenticated");
+    }
 
-            if (!token) {
-                throw new Error("User not authenticated");
-            }
-
-            const payload = {
-                token: token,
-                latitude: location.latitude,
-                longitude: location.longitude,
-                bank: "bank5",
-                accessmodetype: "APP",
-                piddata: form.biometricData,
-                ipaddress: form.ipAddress,
-                mobilenumber: form.mobileno,
-                adhaarnumber: form.aadhaar,
-                nationalbankidentificationnumber: form.bankIIN,
-            };
-
-            const res = await paysprintMiniStatement(payload);
-
-            if (!res || typeof res !== "object")
-                throw new Error("Invalid server response");
-
-            // Set response data and show modal
-            setResponseData(res);
-            setModalVisible(true);
-
-            if (res?.success && res.data?.status) {
-
-                const rawNPCI = res.data?.ministatementlist?.npcidata;
-
-                if (rawNPCI && rawNPCI.length > 0) {
-                    // Parse raw strings into your TransactionItem format
-                    res.data.ministatement = parseNPCIData(rawNPCI);
-
-                    // Extract balance from the last line if available (e.g., "14634.07 CR")
-                    const lastLine = rawNPCI[rawNPCI.length - 1];
-                    if (lastLine.includes('.') && !res.data.balanceamount) {
-                        res.data.balanceamount = lastLine.split(' ')[0];
-                    }
-                }
-                Toast.show({
-                    type: "success",
-                    text1: "Success",
-                    text2: "Mini statement fetched successfully",
-                });
-                // Reset form on success
-                setForm({
-                    mobileno: "",
-                    aadhaar: "",
-                    bankIIN: "",
-                    biometricData: "",
-                    ipAddress: form.ipAddress, // Keep IP address
-                });
-                setTouched({
-                    mobileno: false,
-                    aadhaar: false,
-                    bankIIN: false,
-                    biometricData: false,
-                });
-            } else {
-                throw new Error(res?.message || "Mini statement failed");
-            }
-        } catch (err: any) {
-            console.log("err", err)
-            Toast.show({
-                type: "error",
-                text1: "Statement Error",
-                text2: err.message || "Network Error",
-            });
-        } finally {
-            handleFullReset()
-            setLoading(false);
-        }
+    // 📦 Payload
+    const payload = {
+      token,
+      latitude: location.latitude,
+      longitude: location.longitude,
+      bank: "bank5",
+      accessmodetype: "APP",
+      piddata: form.biometricData,
+      ipaddress: form.ipAddress,
+      mobilenumber: form.mobileno,
+      adhaarnumber: form.aadhaar,
+      nationalbankidentificationnumber: form.bankIIN,
     };
+
+    // 🌐 API Call
+    const res = await paysprintMiniStatement(payload);
+
+    if (!res || typeof res !== "object") {
+      throw new Error("Invalid server response");
+    }
+
+    if (!res.success || !res.data?.status) {
+      throw new Error(res?.message || "Mini statement failed");
+    }
+
+    // 🧾 Parse NPCI data safely
+    const rawNPCI = res.data?.ministatementlist?.npcidata ?? [];
+    const parsedMiniStatement = parseNPCIData(rawNPCI);
+
+    // ✅ IMMUTABLE state update (IMPORTANT)
+    const updatedResponse: MiniStatementResponse = {
+      ...res,
+      data: {
+        ...res.data,
+        ministatement: parsedMiniStatement,
+      },
+    };
+
+    // ✅ Set state AFTER parsing
+    setResponseData(updatedResponse);
+    setModalVisible(true);
+
+    Toast.show({
+      type: "success",
+      text1: "Success",
+      text2: "Mini statement fetched successfully",
+    });
+
+    // 🔄 Reset form (keep IP)
+    setForm(prev => ({
+      mobileno: "",
+      aadhaar: "",
+      bankIIN: "",
+      biometricData: "",
+      ipAddress: prev.ipAddress,
+    }));
+
+    setTouched({
+      mobileno: false,
+      aadhaar: false,
+      bankIIN: false,
+      biometricData: false,
+    });
+
+  } catch (err: any) {
+    console.error("Mini Statement Error:", err);
+    Toast.show({
+      type: "error",
+      text1: "Statement Error",
+      text2: err?.message || "Network Error",
+    });
+  } finally {
+    handleFullReset();
+    setLoading(false);
+  }
+};
 
     const formatCurrency = (amount: number | string) => {
         const numAmount = typeof amount === 'string' ? parseFloat(amount) : amount;
@@ -429,8 +439,45 @@ const handleFullReset = () => {
     };
 
     const formatDate = (dateStr: string) => {
-        // Already in format "24/12" from API
-        return dateStr;
+        // Convert "/12/25" to readable format
+        try {
+            if (!dateStr || dateStr.startsWith('8878')) return dateStr;
+            
+            // Remove leading slash and split
+            const parts = dateStr.replace(/^\//, '').split('/');
+            if (parts.length < 2) return dateStr;
+            
+            const month = parseInt(parts[0], 10);
+            const year = parseInt(parts[1], 10);
+            
+            // Assume current or recent year
+            const fullYear = year > 50 ? 1900 + year : 2000 + year;
+            
+            const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+                               'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+            
+            // Return format: "Jun 25, 2024"
+            return `${monthNames[month - 1]} '${String(year).padStart(2, '0')}`;
+        } catch (e) {
+            return dateStr;
+        }
+    };
+
+    const formatNarration = (narration: string) => {
+        // Convert "CREDIT INTERES" to "Credit Interest"
+        if (!narration) return "Transaction";
+        
+        return narration
+            .split(' ')
+            .map(word => {
+                // Handle abbreviations
+                if (word.length === 3 && word === word.toUpperCase()) {
+                    return word;
+                }
+                return word.charAt(0) + word.slice(1).toLowerCase();
+            })
+            .join(' ')
+            .trim();
     };
 
     const handlePrint = () => {
@@ -452,39 +499,36 @@ const handleFullReset = () => {
     };
 
     // Render transaction item
-    const renderTransaction = ({ item, index }: { item: TransactionItem; index: number }) => (
-        <View style={styles.transactionItem} key={index}>
-            <View style={styles.transactionHeader}>
-                <View style={styles.transactionDateTime}>
-                    <Calendar size={14} color={theme.colors.text.secondary} />
-                    <Text style={styles.transactionDate}>{formatDate(item.date)}</Text>
-                </View>
-                <View style={[
-                    styles.transactionTypeBadge,
-                    item.txnType === 'C' ? styles.creditBadge : styles.debitBadge
-                ]}>
-                    <Text style={[
-                        styles.transactionTypeText,
-                        item.txnType === 'C' ? styles.creditText : styles.debitText
-                    ]}>
-                        {item.txnType === 'C' ? 'CREDIT' : 'DEBIT'}
-                    </Text>
-                </View>
+   const renderTransaction = ({ item, index }: { item: TransactionItem; index: number }) => (
+    <View style={styles.transactionItem} key={index}>
+        <View style={styles.leftContent}>
+            <View style={styles.iconContainer}>
+                {item.txnType === 'C' ? (
+                    <ArrowRight color="#10B981" size={20} style={{ transform: [{ rotate: '-135deg' }] }} />
+                ) : (
+                    <ArrowRight color="#EF4444" size={20} style={{ transform: [{ rotate: '45deg' }] }} />
+                )}
             </View>
-
-            <Text style={styles.transactionNarration}>{item.narration.trim()}</Text>
-
-            <View style={styles.transactionFooter}>
-                <Text style={[
-                    styles.transactionAmount,
-                    item.txnType === 'C' ? styles.creditAmount : styles.debitAmount
-                ]}>
-                    {item.txnType === 'C' ? '+' : '-'}{formatCurrency(item.amount)}
+            <View>
+                <Text style={styles.transactionNarration}>
+                    {item.narration}
+                </Text>
+                <Text style={styles.transactionDate}>
+                    {item.date} • {item.txnType === 'C' ? 'Received' : 'Spent'}
                 </Text>
             </View>
         </View>
-    );
 
+        <View style={styles.rightContent}>
+            <Text style={[
+                styles.transactionAmount,
+                item.txnType === 'C' ? styles.creditAmount : styles.debitAmount
+            ]}>
+                {item.txnType === 'C' ? '+' : '-'}{formatCurrency(item.amount)}
+            </Text>
+        </View>
+    </View>
+);
     /* ---------------- UI ---------------- */
 
     return (
@@ -801,14 +845,6 @@ const styles = StyleSheet.create({
     transactionsList: {
         paddingBottom: 400,
     },
-    transactionItem: {
-        backgroundColor: "#F9FAFB",
-        borderRadius: 10,
-        padding: 12,
-        marginBottom: 8,
-        borderWidth: 1,
-        borderColor: "#E5E7EB",
-    },
     transactionHeader: {
         flexDirection: "row",
         justifyContent: "space-between",
@@ -819,11 +855,6 @@ const styles = StyleSheet.create({
         flexDirection: "row",
         alignItems: "center",
         gap: 4,
-    },
-    transactionDate: {
-        fontSize: 12,
-        color: theme.colors.text.secondary,
-        marginLeft: 4,
     },
     transactionTypeBadge: {
         paddingHorizontal: 8,
@@ -846,26 +877,10 @@ const styles = StyleSheet.create({
     debitText: {
         color: "#EF4444",
     },
-    transactionNarration: {
-        fontSize: 14,
-        fontWeight: "500",
-        color: theme.colors.text.primary,
-        marginBottom: 6,
-    },
     transactionFooter: {
         flexDirection: "row",
         justifyContent: "flex-end",
         alignItems: "center",
-    },
-    transactionAmount: {
-        fontSize: 14,
-        fontWeight: "600",
-    },
-    creditAmount: {
-        color: "#10B981",
-    },
-    debitAmount: {
-        color: "#EF4444",
     },
     detailsContainer: {
         marginTop: 15,
@@ -950,6 +965,52 @@ const styles = StyleSheet.create({
         color: "#FFF",
         fontSize: 16,
         fontWeight: "800",
+    },
+    transactionItem: {
+        flexDirection: 'row',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        backgroundColor: "#FFFFFF",
+        paddingVertical: 14,
+        paddingHorizontal: 12,
+        borderBottomWidth: 1,
+        borderBottomColor: "#F3F4F6",
+    },
+    leftContent: {
+        flexDirection: 'row',
+        alignItems: 'center',
+        flex: 1,
+    },
+    iconContainer: {
+        width: 40,
+        height: 40,
+        borderRadius: 20,
+        backgroundColor: '#F9FAFB',
+        alignItems: 'center',
+        justifyContent: 'center',
+        marginRight: 12,
+    },
+    transactionNarration: {
+        fontSize: 15,
+        fontWeight: "600",
+        color: "#1F2937",
+        textTransform: 'capitalize',
+    },
+    transactionDate: {
+        fontSize: 12,
+        color: "#6B7280",
+        marginTop: 2,
+    },
+    transactionAmount: {
+        fontSize: 16,
+        fontWeight: "700",
+    },
+    creditAmount: { color: "#10B981" },
+    debitAmount: { color: "#EF4444" },
+    rightContent: {
+        alignItems: 'flex-end',
+        justifyContent: 'center',
+        marginLeft: 8,
     },
 });
 

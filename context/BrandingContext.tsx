@@ -45,7 +45,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
       case 'loksevapay':
         return 'loksevapay.in';
       case 'nkpay':
-        return 'login.nkpay.in';
+        return 'nkpay.in';
       default:
         // Default fallback
         return 'app.pinepe.in';
@@ -67,6 +67,8 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         setApiHeaders({
           domain: resolvedDomain,
         });
+
+        console.log("domain",resolvedDomain)
 
         // 4. Fetch the specific Whitelabel configuration for this domain
         // Note: We pass the resolvedDomain in the 'domain' header

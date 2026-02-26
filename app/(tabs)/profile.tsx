@@ -20,7 +20,8 @@ import {
   ChevronRight,
   Camera,
   User,
-  CreditCard, FileText
+  CreditCard, FileText,
+  Users
 } from "lucide-react-native";
 import * as SecureStore from "expo-secure-store";
 import * as ImagePicker from "expo-image-picker";
@@ -59,14 +60,10 @@ export default function ProfileScreen() {
   const [showEditProfile, setShowEditProfile] = useState(false);
 
   const [showSetupMPIN, setShowSetupMPIN] = useState(false);
-   
-  
+
+
   const [mpinLoading, setMpinLoading] = useState(false);
   const [isNavigating, setIsNavigating] = useState(false);
-
-
-
-
 
 
   /* ---------------- FETCH PROFILE ---------------- */
@@ -79,7 +76,7 @@ export default function ProfileScreen() {
       if (!location || !token) return;
 
       const res = await getProfileApi({
-        
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -129,7 +126,7 @@ export default function ProfileScreen() {
       if (!location || !token) return;
 
       const res = await uploadProfilePhotoApi({
-        
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -162,46 +159,46 @@ export default function ProfileScreen() {
 
   /* ---------------- LOGOUT ---------------- */
   const handleLogout = () => {
-  Alert.alert("Logout", "Are you sure you want to logout?", [
-    { text: "Cancel", style: "cancel" },
-    {
-      text: "Logout",
-      style: "destructive",
-      onPress: async () => {
-        try {
-          
-          const location = await getLatLong();
-          const token = await SecureStore.getItemAsync("userToken");
+    Alert.alert("Logout", "Are you sure you want to logout?", [
+      { text: "Cancel", style: "cancel" },
+      {
+        text: "Logout",
+        style: "destructive",
+        onPress: async () => {
+          try {
 
-          // Call API only if we have required data
-          if (location && token) {
-            try {
-              await logoutApi({
-                latitude: location.latitude,
-                longitude: location.longitude,
-                token,
-              });
-            } catch (apiErr) {
-              // Silent fail – we still logout locally
-              console.log("Logout API failed, proceeding locally");
+            const location = await getLatLong();
+            const token = await SecureStore.getItemAsync("userToken");
+
+            // Call API only if we have required data
+            if (location && token) {
+              try {
+                await logoutApi({
+                  latitude: location.latitude,
+                  longitude: location.longitude,
+                  token,
+                });
+              } catch (apiErr) {
+                // Silent fail – we still logout locally
+                console.log("Logout API failed, proceeding locally");
+              }
             }
+          } catch (err) {
+            console.log("Logout error:", err);
+          } finally {
+            // 🔐 FORCE LOGOUT LOCALLY (Always runs)
+            await SecureStore.deleteItemAsync("userToken");
+            await SecureStore.deleteItemAsync("userData");
+
+            await signOut();
+            router.replace("/(auth)/login");
+
+
           }
-        } catch (err) {
-          console.log("Logout error:", err);
-        } finally {
-          // 🔐 FORCE LOGOUT LOCALLY (Always runs)
-          await SecureStore.deleteItemAsync("userToken");
-          await SecureStore.deleteItemAsync("userData");
-
-          await signOut();
-          router.replace("/(auth)/login");
-
-          
-        }
+        },
       },
-    },
-  ]);
-};
+    ]);
+  };
 
   /* ---------------- SEND OTP ---------------- */
   const handleResetMpin = async () => {
@@ -220,7 +217,7 @@ export default function ProfileScreen() {
       }
 
       const res = await sendMpinOtpApi({
-        
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -324,6 +321,27 @@ export default function ProfileScreen() {
         },
       ],
     },
+
+    {
+      title: "Recipients",
+      items: [
+        {
+          icon: Users, // import from lucide-react
+          title: "Manage Recipients",
+          subtitle: "Add, edit or remove recipients",
+          onPress: () => {
+            if (isNavigating) return;
+            setIsNavigating(true);
+
+            router.push("/manage-recipients" as any);
+
+            setTimeout(() => setIsNavigating(false), 800);
+          },
+          showChevron: true,
+        },
+      ],
+    },
+
 
     {
       title: "Support",

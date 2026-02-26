@@ -1,5 +1,5 @@
 import { router, Tabs } from 'expo-router';
-import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Alert ,ScrollView} from 'react-native';
+import { View, StyleSheet, TouchableOpacity, Text, ActivityIndicator, Alert, ScrollView } from 'react-native';
 import { Home, User, Receipt, Grid, ShieldAlert, RefreshCcw } from 'lucide-react-native';
 import { theme } from '@/theme';
 import { useEffect, useState } from 'react';
@@ -8,7 +8,6 @@ import Constants from "expo-constants";
 import { useBranding } from '@/context/BrandingContext';
 import { getLatLong } from '@/utils/location';
 import { getKycStatusApi } from '../../api/kyc.api';
-import * as Linking from 'expo-linking';
 import { useAuth } from '@/context/AuthContext';
 import * as Application from 'expo-application';
 import { logoutApi } from '@/api/auth.api';
@@ -16,22 +15,22 @@ import KYCApplicationForm from '../KYCApplicationForm';
 import { AnimatedCard } from '@/components/animated/AnimatedCard';
 import PaysprintTest from '../PaysprintETest';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import Toast from 'react-native-toast-message';
+import { getApkVersion } from '@/api/apk.api';
+import UpdateNotificationCard from '../ApkDownloadScreen';
+
+
 
 
 export default function TabLayout() {
   type KycStatus = "NOT_SUBMITTED" | "PENDING" | "APPROVED" | "REJECTED";
-
   const [kycStatus, setKycStatus] = useState<KycStatus>("NOT_SUBMITTED");
   const [kycLoading, setKycLoading] = useState(true);
-  const appName = (Application.applicationName || '').toString().trim();
-  const { domainName: brandingDomain, tenant } = useBranding();
-  const domainName = brandingDomain!;
-
-
- 
-
-
+  const appVersion = Constants.expoConfig?.version;
+  const [apkVersion,setApkVersion]=useState("");
+  const [apkUrl,setApkUrl]=useState("");
   const { signOut, hasMPIN } = useAuth();
+  const [versionLoading,setVersionLoading]=useState(false)
 
   const handleLogout = () => {
     Alert.alert("Logout", "Are you sure you want to logout?", [
@@ -76,7 +75,59 @@ export default function TabLayout() {
     ]);
   };
 
+  const getApkVersionApi = async () => {
+    const location = await getLatLong();
+    console.log("app version via expo",appVersion)
 
+    // ❌ Block if location missing
+    if (!location) {
+      Toast.show({
+        type: "error",
+        text1: "Location Required",
+        text2: "Please enable location permission to continue",
+      });
+      return;
+    }
+
+    try{
+      setVersionLoading(true);
+      const token = await SecureStore.getItemAsync("userToken");
+      if (!token) return;
+      const response:any= await getApkVersion({
+        latitude:location.latitude,
+        longitude:location.longitude,
+        token:token
+      });
+      
+      if(response.success){
+        console.log("apkVersion from api", response.data.apk_version)
+        console.log("appVersion",appVersion)
+        setApkVersion(response.data.apk_version)
+        setApkUrl(response.data.apk_download_url)
+      }
+      else{
+        Toast.show({
+          type:"error",
+          text1:"Error found",
+          text2: response.message || "Network error"
+        })
+      }
+    }
+    catch(err:any){
+       Toast.show({
+          type:"error",
+          text1:"Error found",
+          text2: err.message || "Network error"
+        })
+
+    }
+    finally{
+      setVersionLoading(false)
+    }
+    
+
+  }
+   
   const checkKycStatus = async () => {
     try {
       setKycLoading(true);
@@ -118,6 +169,7 @@ export default function TabLayout() {
 
   useEffect(() => {
     checkKycStatus();
+    getApkVersionApi();
   }, []);
 
   // return(
@@ -125,12 +177,18 @@ export default function TabLayout() {
   // )
 
 
-  if (kycLoading) {
+  if (kycLoading || versionLoading) {
     return (
       <View style={styles.centered}>
         <ActivityIndicator size="large" color={theme.colors.primary[500]} />
       </View>
     );
+  }
+
+  if(apkVersion!=appVersion){
+    return(
+      <UpdateNotificationCard latestVersion={apkVersion} downloadUrl={apkUrl}/>
+    )
   }
 
   /* ❌ KYC NOT SUBMITTED → SHOW FORM */
@@ -145,187 +203,187 @@ export default function TabLayout() {
   /* ⏳ PENDING → SHOW PENDING VIEW */
   if (kycStatus === "PENDING") {
     return (
-     <AnimatedCard style={{
-    flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
-    backgroundColor: '#F8FAFC',
-    padding: 24,
-}}>
-    <View style={{
-        width: '100%',
-        backgroundColor: '#FFFFFF',
-        borderRadius: 24,
-        padding: 40,
+      <AnimatedCard style={{
+        flex: 1,
+        justifyContent: 'center',
         alignItems: 'center',
-        shadowColor: "#000",
-        shadowOffset: { width: 0, height: 4 },
-        shadowOpacity: 0.07,
-        shadowRadius: 12,
-        elevation: 5,
-    }}>
-        {/* Icon Container */}
+        backgroundColor: '#F8FAFC',
+        padding: 24,
+      }}>
         <View style={{
+          width: '100%',
+          backgroundColor: '#FFFFFF',
+          borderRadius: 24,
+          padding: 40,
+          alignItems: 'center',
+          shadowColor: "#000",
+          shadowOffset: { width: 0, height: 4 },
+          shadowOpacity: 0.07,
+          shadowRadius: 12,
+          elevation: 5,
+        }}>
+          {/* Icon Container */}
+          <View style={{
             backgroundColor: `${theme.colors.primary[500]}15`,
             padding: 20,
             borderRadius: 100,
             marginBottom: 24
-        }}>
+          }}>
             <ShieldAlert size={42} color={theme.colors.primary[500]} />
-        </View>
+          </View>
 
-        <Text style={{
+          <Text style={{
             fontSize: 22,
             fontWeight: "800",
             color: "#1E293B",
             textAlign: 'center'
-        }}>
+          }}>
             Verification in Progress
-        </Text>
+          </Text>
 
-        <Text style={{
+          <Text style={{
             marginTop: 12,
             color: "#64748B",
             textAlign: 'center',
             lineHeight: 22,
             fontSize: 15
-        }}>
+          }}>
             We're currently reviewing your documents. This usually takes less than 3-4 working days.
-        </Text>
+          </Text>
 
-        {/* Primary Action: Check Status */}
-        <TouchableOpacity
+          {/* Primary Action: Check Status */}
+          <TouchableOpacity
             activeOpacity={0.7}
             onPress={checkKycStatus}
             style={{
-                marginTop: 32,
-                width: '100%', // Full width for better tap target
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
-                backgroundColor: theme.colors.primary[500],
-                paddingVertical: 14,
-                borderRadius: 16,
-                shadowColor: theme.colors.primary[500],
-                shadowOffset: { width: 0, height: 4 },
-                shadowOpacity: 0.3,
-                shadowRadius: 8,
+              marginTop: 32,
+              width: '100%', // Full width for better tap target
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
+              backgroundColor: theme.colors.primary[500],
+              paddingVertical: 14,
+              borderRadius: 16,
+              shadowColor: theme.colors.primary[500],
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.3,
+              shadowRadius: 8,
             }}
-        >
+          >
             <RefreshCcw size={18} color="#FFF" />
             <Text style={{
-                color: "#FFF",
-                marginLeft: 10,
-                fontWeight: "600",
-                fontSize: 16
+              color: "#FFF",
+              marginLeft: 10,
+              fontWeight: "600",
+              fontSize: 16
             }}>
-                Check Update
+              Check Update
             </Text>
-        </TouchableOpacity>
+          </TouchableOpacity>
 
-        {/* Secondary Action: Logout */}
-        <TouchableOpacity
+          {/* Secondary Action: Logout */}
+          <TouchableOpacity
             activeOpacity={0.6}
             onPress={handleLogout} // Your logout function
             style={{
-                marginTop: 16,
-                width: '100%',
-                paddingVertical: 14,
-                borderRadius: 16,
-                borderWidth: 1.5,
-                borderColor: '#E2E8F0', // Soft border color
-                flexDirection: 'row',
-                justifyContent: 'center',
-                alignItems: 'center',
+              marginTop: 16,
+              width: '100%',
+              paddingVertical: 14,
+              borderRadius: 16,
+              borderWidth: 1.5,
+              borderColor: '#E2E8F0', // Soft border color
+              flexDirection: 'row',
+              justifyContent: 'center',
+              alignItems: 'center',
             }}
-        >
+          >
             <Text style={{
-                color: "#64748B", 
-                fontWeight: "600",
-                fontSize: 16
+              color: "#64748B",
+              fontWeight: "600",
+              fontSize: 16
             }}>
-                Logout
+              Logout
             </Text>
-        </TouchableOpacity>
-        
-    </View>
-</AnimatedCard>
+          </TouchableOpacity>
+
+        </View>
+      </AnimatedCard>
+    );
+  }
+
+  if (kycStatus === "REJECTED") {
+    return (
+      <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc", marginTop: 16 }}>
+        <ScrollView
+          contentContainerStyle={{
+          }}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+
+          <View style={{ paddingHorizontal: 16 }}>
+            <View
+              style={{
+                backgroundColor: "#fef2f2",
+                borderWidth: 1,
+                borderColor: "#fecaca",
+                borderRadius: 16,
+                padding: 20,
+                flexDirection: "row",
+                alignItems: "flex-start",
+                shadowColor: "#000",
+                shadowOffset: { width: 0, height: 2 },
+                shadowOpacity: 0.05,
+                shadowRadius: 10,
+                elevation: 2,
+              }}
+            >
+              <View
+                style={{
+                  width: 10,
+                  height: 10,
+                  borderRadius: 5,
+                  backgroundColor: "#ef4444",
+                  marginTop: 6,
+                  marginRight: 12,
+                }}
+              />
+
+              <View style={{ flex: 1 }}>
+                <Text
+                  style={{
+                    fontSize: 18,
+                    fontWeight: "bold",
+                    color: "#991b1b",
+                    marginBottom: 4,
+                  }}
+                >
+                  KYC Rejected
+                </Text>
+
+                <Text
+                  style={{
+                    fontSize: 14,
+                    color: "#b91c1c",
+                    lineHeight: 20,
+                  }}
+                >
+                  Your previous application was not approved. Please review your
+                  details and re-submit the form below with clear documents.
+                </Text>
+              </View>
+            </View>
+          </View>
+
+
+          <KYCApplicationForm onKycSubmitted={checkKycStatus} />
+
+        </ScrollView>
+      </SafeAreaView>
     );
   }
 
 
-
-if (kycStatus === "REJECTED") {
-  return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: "#f8fafc",marginTop:16 }}>
-      <ScrollView
-        contentContainerStyle={{
-        }}
-        keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
-      >
-        
-       <View style={{paddingHorizontal:16}}>
-         <View
-          style={{
-            backgroundColor: "#fef2f2",
-            borderWidth: 1,
-            borderColor: "#fecaca",
-            borderRadius: 16,
-            padding: 20,
-            flexDirection: "row",
-            alignItems: "flex-start",
-            shadowColor: "#000",
-            shadowOffset: { width: 0, height: 2 },
-            shadowOpacity: 0.05,
-            shadowRadius: 10,
-            elevation: 2,
-          }}
-        >
-          <View
-            style={{
-              width: 10,
-              height: 10,
-              borderRadius: 5,
-              backgroundColor: "#ef4444",
-              marginTop: 6,
-              marginRight: 12,
-            }}
-          />
-
-          <View style={{ flex: 1 }}>
-            <Text
-              style={{
-                fontSize: 18,
-                fontWeight: "bold",
-                color: "#991b1b",
-                marginBottom: 4,
-              }}
-            >
-              KYC Rejected
-            </Text>
-
-            <Text
-              style={{
-                fontSize: 14,
-                color: "#b91c1c",
-                lineHeight: 20,
-              }}
-            >
-              Your previous application was not approved. Please review your
-              details and re-submit the form below with clear documents.
-            </Text>
-          </View>
-        </View>
-       </View>
-
-       
-          <KYCApplicationForm onKycSubmitted={checkKycStatus} />
-        
-      </ScrollView>
-    </SafeAreaView>
-  );
-}
 
 
   return (

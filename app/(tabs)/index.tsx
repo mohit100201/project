@@ -1,9 +1,10 @@
 import React, { useEffect, useMemo, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, Image, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image, TouchableOpacity, Linking, RefreshControl } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import {
   Wallet, ArrowUpRight, ArrowDownLeft, Zap,
-  Clock, XCircle, User, Plus
+  Clock, XCircle, User, Plus,
+  Menu
 } from 'lucide-react-native';
 
 import { useAuth } from '@/context/AuthContext';
@@ -23,6 +24,7 @@ import { ServiceItem } from './services';
 import { VALID_ROUTES } from '@/utils/routes';
 import { useTheme } from '@/context/ThemeProvider';
 import { AppTheme } from '@/theme/theme';
+import { TransactionDetailsModal } from '@/components/ui/TransactionDetailModal';
 
 const ShimmerPlaceholder = createShimmerPlaceholder(LinearGradient);
 
@@ -48,7 +50,7 @@ const EmptyState = ({
   icon: React.ReactNode;
   title: string;
   subtitle?: string;
-  styles:any
+  styles: any
 }) => (
   <View style={styles.emptyState}>
     {icon}
@@ -59,7 +61,7 @@ const EmptyState = ({
 
 export default function HomeScreen() {
   const { theme } = useTheme();
-    const styles = useMemo(() => createStyles(theme), [theme]);
+  const styles = useMemo(() => createStyles(theme), [theme]);
   const [balance, setBalance] = useState<number | null>(null);
   const [balanceLoading, setBalanceLoading] = useState(true);
   const [transactions, setTransactions] = useState<any[]>([]);
@@ -68,8 +70,29 @@ export default function HomeScreen() {
   const [profileData, setProfileData] = useState<any>([]);
   const [servicesLoading, setServicesLoading] = useState(false);
   const [profileLoading, setProfileLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const [showTxnModal, setShowTxnModal] = useState(false);
+  const [selectedTxn, setSelectedTxn] = useState<any>(null);
 
-   
+  const onRefresh = React.useCallback(async () => {
+    setRefreshing(true);
+
+    // Run all fetch functions in parallel
+    try {
+      await Promise.all([
+        fetchTransactions(),
+        fetchServices(),
+        fetchProfile(),
+        fetchWalletBalance()
+      ]);
+    } catch (error) {
+      console.error("Refresh failed", error);
+    } finally {
+      setRefreshing(false);
+    }
+  }, []);
+
+
 
 
   const getGreeting = () => {
@@ -95,12 +118,12 @@ export default function HomeScreen() {
       setTransactionsLoading(true);
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-     
+
 
       if (!location || !token) return;
 
       const res = await getTransactionsApi({
-       
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -142,18 +165,24 @@ export default function HomeScreen() {
 
   };
 
+  const handleOnPress = (item:any) => {
+    
+    setSelectedTxn(item);
+    setShowTxnModal(true);
+  }
+
   const fetchServices = async () => {
     try {
       setServicesLoading(true);
 
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      
+
 
       if (!location || !token) return;
 
       const res = await getServicesApi({
-        
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -161,7 +190,7 @@ export default function HomeScreen() {
         perPage: 5,
       });
 
-     
+
 
       if (res.success) {
         setServices(res.data.items || []);
@@ -183,22 +212,22 @@ export default function HomeScreen() {
 
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-      
+
       if (!location || !token) return;
 
       const res = await getProfileApi({
-        
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
       });
-     
+
 
       if (res.success) {
         setProfileData(res.data);
       }
     } catch (err: any) {
-      
+
       Toast.show({
         type: "error",
         text1: "Failed to fetch profile",
@@ -215,12 +244,12 @@ export default function HomeScreen() {
 
       const location = await getLatLong();
       const token = await SecureStore.getItemAsync("userToken");
-     
+
 
       if (!location || !token) return;
 
       const res = await getWalletBalanceApi({
-        
+
         latitude: location.latitude,
         longitude: location.longitude,
         token,
@@ -247,19 +276,37 @@ export default function HomeScreen() {
   }, []);
 
   return (
-    <ScrollView style={styles.container} showsVerticalScrollIndicator={false} keyboardShouldPersistTaps="handled">
+    <ScrollView
+      style={styles.container}
+      showsVerticalScrollIndicator={false}
+      keyboardShouldPersistTaps="handled"
+      refreshControl={
+        <RefreshControl
+          refreshing={refreshing}
+          onRefresh={onRefresh}
+          colors={[theme.colors.primary[500]]} // Android loader color
+          tintColor={theme.colors.primary[500]} // iOS loader color
+          progressBackgroundColor={theme.colors.background.main}
+        />
+      }
+
+    >
       <LinearGradient
         colors={[theme.colors.primary[500], theme.colors.primary[700]]}
         style={styles.header}
       >
+       
         <View style={styles.headerContent}>
+           <View style={{flexDirection:'row',columnGap:8}}>
+            <Menu size={32} color="#fff" />
           <View>
             <Text style={styles.greeting}>{getGreeting()}</Text>
-                <Text style={styles.userName}>
-                  {profileData?.user?.name}
-                </Text>  
+            <Text style={styles.userName}>
+              {profileData?.user?.name}
+            </Text>
           </View>
-          <TouchableOpacity style={[styles.avatar,]} onPress={()=>router.push("/(tabs)/profile")}>
+           </View>
+          <TouchableOpacity style={[styles.avatar,]} onPress={() => router.push("/(tabs)/profile")}>
             {profileData?.user?.photo ? (
               <Image
                 source={{ uri: profileData.user.photo }}
@@ -347,14 +394,14 @@ export default function HomeScreen() {
             <TouchableOpacity
               key={service.id}
               onPress={() => handleServicePress(service)}
-              style={{width:"47%",padding:4}}
+              style={{ width: "47%", padding: 4 }}
             >
 
               <AnimatedCard
                 key={service.id}
                 delay={index * 100}
               >
-                <View style={[styles.serviceIconContainer,{}]}>
+                <View style={[styles.serviceIconContainer, {}]}>
                   <Image
                     source={{ uri: service.image }}
                     style={{ width: 24, height: 24 }}
@@ -393,7 +440,7 @@ export default function HomeScreen() {
             <TransactionSkeleton styles={styles} />
             <TransactionSkeleton styles={styles} />
             <TransactionSkeleton styles={styles} />
-          
+
           </>
         ) : transactions.length === 0 ? (
           <EmptyState
@@ -411,7 +458,7 @@ export default function HomeScreen() {
                   theme.colors.success[500];
 
             return (
-              <AnimatedCard key={item.id || index} style={styles.transactionCard} delay={index * 100}>
+              <AnimatedCard onPress={()=>{handleOnPress(item)}} key={item.id || index} style={styles.transactionCard} delay={index * 100}>
                 <View style={styles.cardRow}>
                   <View style={[styles.iconWrapper, {
                     backgroundColor: item.status === 'pending' ? theme.colors.warning[50]
@@ -443,8 +490,9 @@ export default function HomeScreen() {
           })
         )}
       </View>
-
       <View style={{ height: 100 }} />
+
+      <TransactionDetailsModal visible={showTxnModal} transaction={selectedTxn} onClose={() => setShowTxnModal(false)} />
     </ScrollView>
   );
 }
@@ -453,7 +501,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
   container: { flex: 1, backgroundColor: theme.colors.background.main },
   header: { paddingTop: theme.spacing[12], paddingHorizontal: theme.spacing[6], paddingBottom: theme.spacing[8] },
   headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing[6] },
-  greeting: { fontSize: theme.typography.fontSizes.md, color: theme.colors.text.inverse, opacity: 0.9 },
+  greeting: { fontSize: theme.typography.fontSizes.lg, color: theme.colors.text.inverse, opacity: 0.9 },
   userName: { fontSize: theme.typography.fontSizes['2xl'], fontWeight: theme.typography.fontWeights.bold, color: theme.colors.text.inverse, marginTop: theme.spacing[1] },
   profileImage: { width: 48, height: 48, borderRadius: theme.borderRadius.full, backgroundColor: theme.colors.text.inverse, justifyContent: 'center', alignItems: 'center' },
   profileInitial: { fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: theme.colors.primary[500] },
@@ -584,7 +632,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     fontSize: 12,
     color: theme.colors.primary[600] || '#666',
   },
-   
+
 
 
 });

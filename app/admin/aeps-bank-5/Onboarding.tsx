@@ -12,6 +12,7 @@ import * as SecureStore from "expo-secure-store";
 
 import { NativeModules } from 'react-native';
 import Toast from "react-native-toast-message";
+import SdkResultModal from "./mini-statement/SdkResultModal";
 
 const { PaysprintModule } = NativeModules;
 
@@ -29,7 +30,7 @@ type PaysprintForm = {
 
 type OnboardingScreenProps = {
     merchantCode: string;
-     fetchStatus: () => void;
+    fetchStatus: () => void;
 
 
 }
@@ -45,9 +46,6 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
         aadhaar?: string;
         dob?: string;
     }>({});
-
-
-
 
 
     const validate = () => {
@@ -100,7 +98,6 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
         return Object.keys(newErrors).length === 0;
     };
 
-
     const [form, setForm] = useState<PaysprintForm>({
         pId: '',
         pApiKey: '',
@@ -112,8 +109,6 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
         aadhaar: "",
         dob: ""
     });
-
-
 
     const handleSubmit = async () => {
         if (!validate()) return;
@@ -182,6 +177,33 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
 
             props.fetchStatus();
 
+            let parsedResult: any;
+
+            if (typeof sdkResult === "string") {
+                parsedResult = JSON.parse(sdkResult);
+            } else {
+                parsedResult = sdkResult;
+            }
+
+         if(parsedResult.status){
+            Toast.show({
+                type:'success',
+                text1:"Sdk success result",
+                text2:parsedResult.message
+            })
+         }
+         else{
+             Toast.show({
+                type:"error",
+                text1:"Sdk failure result",
+                text2:parsedResult.message
+            })
+
+         }
+
+
+
+
             console.log("sdk result", sdkResult);
 
         } catch (err) {
@@ -195,8 +217,6 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
             setLoading(false);
         }
     };
-
-
 
     const update = (key: keyof PaysprintForm, value: string) => {
         setForm(prev => ({ ...prev, [key]: value }));
@@ -274,8 +294,6 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
                             }}
                         />
 
-
-
                         <AnimatedButton
                             title="Submit"
                             onPress={handleSubmit}
@@ -287,8 +305,6 @@ const OnboardingScreen = (props: OnboardingScreenProps) => {
                     </View>
                 </AnimatedCard>
             </View>
-
-
         </View>
     )
 }

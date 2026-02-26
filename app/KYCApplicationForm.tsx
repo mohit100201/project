@@ -14,6 +14,8 @@ import { city } from "@/utils/data";
 import { businessTypes } from "@/utils/businessTypesData";
 import { apiClient } from "@/api/api.client";
 import { SafeAreaView } from "react-native-safe-area-context";
+import CustomDropdown3 from "@/components/ui/CustomDropdwon3";
+import { DropdownItem } from "@/components/ui/CustomDropdown";
 
 type Props = {
     onKycSubmitted?: () => void;
@@ -88,7 +90,7 @@ const UploadBtn = ({ label, fileData, onPress, error }: any) => {
     const isUploaded = !!(fileData && fileData?.uri);
     return (
         <View style={{}}>
-            <Text style={[styles.label, {marginBottom: 8,marginTop: 16,}]}>{label}</Text>
+            <Text style={[styles.label, {marginBottom: 8}]}>{label}</Text>
             <TouchableOpacity
                 style={[styles.uploadBox, isUploaded && styles.uploadSuccessBox]}
                 onPress={onPress}
@@ -396,16 +398,16 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
             formData.append("first_name", form.first_name);
             formData.append("last_name", form.last_name);
             formData.append("email", form.email);
-            formData.append("mobile_number", form.mobile);
+            formData.append("phone", form.mobile);
             formData.append("dob", form.dob);
-            formData.append("pan_number", form.pan_no);
-            formData.append("aadhaar_number", form.aadhar_no);
+            formData.append("pancard_number", form.pan_no);
+            formData.append("aadhar_number", form.aadhar_no);
             formData.append("user_id", String(userId));
 
             // Business Details
             formData.append("business_name", form.business_name);
             formData.append("business_type", form.business_type);
-            formData.append("is_GST_registered", form.is_GST_registered);
+            formData.append("gst", form.is_GST_registered);
             if (form.is_GST_registered === "Yes") {
                 formData.append("GST_number", form.GST_number);
             }
@@ -418,7 +420,7 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
 
             // Documents
             if (form.aadhar_front?.uri) {
-                formData.append("aadhaar_doc", {
+                formData.append("aadhar_front_image", {
                     uri: form.aadhar_front.uri,
                     type: form.aadhar_front.type || "image/jpeg",
                     name: form.aadhar_front.name || "aadhar_front.jpg",
@@ -426,7 +428,7 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
             }
 
             if (form.aadhar_back?.uri) {
-                formData.append("aadhaar_back_doc", {
+                formData.append("aadhar_back_image", {
                     uri: form.aadhar_back.uri,
                     type: form.aadhar_back.type || "image/jpeg",
                     name: form.aadhar_back.name || "aadhar_back.jpg",
@@ -434,7 +436,7 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
             }
 
             if (form.pan_card?.uri) {
-                formData.append("pan_doc", {
+                formData.append("pancard_image", {
                     uri: form.pan_card.uri,
                     type: form.pan_card.type || "image/jpeg",
                     name: form.pan_card.name || "pan_card.jpg",
@@ -442,7 +444,7 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
             }
 
             if (form.passport_size_photo?.uri) {
-                formData.append("passport_photo", {
+                formData.append("passport_size_photo", {
                     uri: form.passport_size_photo.uri,
                     type: form.passport_size_photo.type || "image/jpeg",
                     name: form.passport_size_photo.name || "passport_photo.jpg",
@@ -510,7 +512,8 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
                                 </View>
                                 <View style={styles.divider} />
 
-                                <UploadBtn
+                                <View style={{rowGap:8,marginTop:16}}>
+                                    <UploadBtn
                                     label="Aadhaar Front"
                                     fileData={form.aadhar_front}
                                     onPress={() => handleUpload('aadhar_front', 'Aadhaar Front')}
@@ -534,6 +537,7 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
                                     onPress={() => handleUpload('passport_size_photo', 'Passport Size Photo')}
                                     error={errors.passport_size_photo}
                                 />
+                                </View>
                             </View>
                         </AnimatedCard>
 
@@ -546,7 +550,7 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
                                 </View>
                                 <View style={styles.divider} />
 
-                                <View style={styles.row}>
+                                <View style={[styles.row]}>
                                     <View style={{ flex: 0.5, marginRight: 5 }}>
                                         <CustomInput
                                             label="First Name"
@@ -685,32 +689,33 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
                                     iconStart={Briefcase}
                                 />
 
-                                <CustomDropdownPicker2
+
+                                <CustomDropdown3
                                     label="Business Type"
                                     items={BUSINESS_TYPE_OPTIONS}
                                     value={form.business_type || null}
-                                    onValueChange={(val) => {
+                                    onSelect={(val) => {
                                         if (val) {
-                                            update("business_type", val as string);
+                                            update("business_type", val.value);
                                             handleBlur("business_type");
                                         }
                                     }}
                                     error={touched.business_type ? errors.business_type : undefined}
-                                    listMode="MODAL"
+                                    
                                 />
 
-                                <CustomDropdownPicker2
+
+                                <CustomDropdown3
                                     label="GST Registered?"
                                     items={GST_OPTIONS}
                                     value={form.is_GST_registered || null}
-                                    onValueChange={(val) => {
+                                    onSelect={(val) => {
                                         if (val) {
-                                            update("is_GST_registered", val as "Yes" | "No");
+                                            update("is_GST_registered", val.value);
                                             handleBlur("is_GST_registered");
                                         }
                                     }}
                                     error={touched.is_GST_registered ? errors.is_GST_registered : undefined}
-                                    listMode="MODAL"
                                     
                                 />
 
@@ -758,35 +763,35 @@ const KYCApplicationForm = ({ onKycSubmitted }: Props) => {
                                     iconStart={MapPin}
                                 />
 
-                                <CustomDropdownPicker2
+                                <CustomDropdown3
                                     label="State"
                                     items={STATE_OPTIONS}
                                     value={form.state || null}
-                                    onValueChange={(val) => {
+                                    onSelect={(val) => {
                                         if (val) {
-                                            update("state", val as string);
+                                            update("state", val.value);
                                             update("city", ""); // Reset city when state changes
                                             handleBlur("state");
                                         }
                                     }}
                                     error={touched.state ? errors.state : undefined}
-                                    listMode="MODAL"
+                                   
                                 />
 
-                                <CustomDropdownPicker2
+                                <CustomDropdown3
                                     key={`city-${form.state}`}
                                     label="City"
                                     items={getCityOptions(form.state)}
                                     value={form.city || null}
                                     disabled={!form.state}
-                                    onValueChange={(val) => {
+                                    onSelect={(val) => {
                                         if (val) {
-                                            update("city", val as string);
+                                            update("city", val.value);
                                             handleBlur("city");
                                         }
                                     }}
                                     error={touched.city ? errors.city : undefined}
-                                    listMode="MODAL"
+                                   
                                 />
 
                                 <CustomInput
@@ -854,8 +859,6 @@ const styles = StyleSheet.create({
         height: 1,
         width: "100%",
         backgroundColor: theme.colors.border.light,
-        marginTop: 3,
-        marginBottom: 12,
     },
     row: {
         flexDirection: 'row',

@@ -10,10 +10,10 @@ import AepsPaysprint from "./AepsPaysprint";
 import Aeps2FA from "./Aeps2FA";
 import OnboardingUnderReview from "./OnboardingUnderReview";
 import { theme } from "@/theme";
-import { useNavigation } from "@react-navigation/native";
+
 
 const AepsAirtel = () => {
-    const navigation = useNavigation<any>();
+  
     const [code, setCode] = useState<number | null>(null);
     const [loading, setLoading] = useState(true);
     const [status, setStatus] = useState<string | null>(null);
@@ -139,6 +139,8 @@ const AepsAirtel = () => {
 
 
     return renderScreen();
+
+    //  return <OnboardingScreen  merchantCode={merchantCode}  fetchStatus={fetchStatus}/>
 
     //  return <AepsPaysprint />
 }

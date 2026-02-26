@@ -5,6 +5,7 @@ import { AuthProvider } from "@/context/AuthContext";
 import { useFrameworkReady } from "@/hooks/useFrameworkReady";
 import { BrandingProvider } from '@/context/BrandingContext';
 import { ThemeProvider } from "@/context/ThemeProvider";
+import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 
 // This helps the APK know where to start
@@ -17,11 +18,11 @@ export default function RootLayout() {
   useFrameworkReady();
 
   return (
+      <GestureHandlerRootView style={{ flex: 1 }}>
     <ThemeProvider>
     <BrandingProvider>
       <AuthProvider>
         <Stack screenOptions={{ headerShown: false }}>
-          {/* We define the screens here, but index.tsx handles the logic */}
           <Stack.Screen name="index" /> 
           <Stack.Screen name="(auth)" />
           <Stack.Screen name="(tabs)" />
@@ -32,5 +33,6 @@ export default function RootLayout() {
       </AuthProvider>
     </BrandingProvider>
     </ThemeProvider>
+    </GestureHandlerRootView>
   );
 }

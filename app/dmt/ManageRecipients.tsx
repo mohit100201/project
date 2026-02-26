@@ -26,7 +26,7 @@ import { addRecipientApi, deleteRecipientApi, fetchDmtRecipientsApi, getDmtTrans
 import Toast from "react-native-toast-message";
 import DmtTransferModal from "@/components/ui/DmtTransferModal";
 import CreateRecipientModal from "@/components/ui/CreateRecipientModal";
-import { it } from "zod/v4/locales";
+
 
 interface ManageRecipientsProps {
   selectedPipe: string;
