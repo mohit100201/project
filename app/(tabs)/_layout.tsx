@@ -188,11 +188,11 @@ export default function TabLayout() {
     );
   }
 
-  if(apkVersion!=appVersion){
-    return(
-      <UpdateNotificationCard latestVersion={apkVersion} downloadUrl={apkUrl}/>
-    )
-  }
+  // if(apkVersion!=appVersion){
+  //   return(
+  //     <UpdateNotificationCard latestVersion={apkVersion} downloadUrl={apkUrl}/>
+  //   )
+  // }
 
   /* ❌ KYC NOT SUBMITTED → SHOW FORM */
   if (kycStatus === "NOT_SUBMITTED") {

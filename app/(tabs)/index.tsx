@@ -73,6 +73,7 @@ export default function HomeScreen() {
   const [refreshing, setRefreshing] = useState(false);
   const [showTxnModal, setShowTxnModal] = useState(false);
   const [selectedTxn, setSelectedTxn] = useState<any>(null);
+  const [allServices, setAllServices] = useState<any[]>([]);
 
   const onRefresh = React.useCallback(async () => {
     setRefreshing(true);
@@ -165,8 +166,8 @@ export default function HomeScreen() {
 
   };
 
-  const handleOnPress = (item:any) => {
-    
+  const handleOnPress = (item: any) => {
+
     setSelectedTxn(item);
     setShowTxnModal(true);
   }
@@ -204,6 +205,49 @@ export default function HomeScreen() {
       setServicesLoading(false);
     }
   };
+
+  const handleFetchServices = async () => {
+    setServicesLoading(true);
+    try {
+      const location = await getLatLong();
+      if (!location) {
+        Toast.show({
+          type: "error",
+          text1: "Location Required",
+          text2: "Please enable location permission",
+        });
+        setServicesLoading(false);
+        return;
+      }
+
+      const token = await SecureStore.getItemAsync("userToken");
+
+
+      const json = await getServicesApi({
+
+        latitude: location.latitude,
+        longitude: location.longitude,
+        token: token!,
+        status: "active",
+        perPage: 50,
+      });
+
+      setAllServices(json.data.items || []);
+
+    } catch (err: any) {
+      Toast.show({
+        type: "error",
+        text1: "Failed to load services",
+        text2: err.message || "Something went wrong",
+      });
+    } finally {
+      setServicesLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    handleFetchServices();
+  }, []);
 
 
   const fetchProfile = async () => {
@@ -291,140 +335,221 @@ export default function HomeScreen() {
       }
 
     >
-      <LinearGradient
-        colors={[theme.colors.primary[500], theme.colors.primary[700]]}
-        style={styles.header}
-      >
-       
-        <View style={styles.headerContent}>
-           <View style={{flexDirection:'row',columnGap:8}}>
-           
-          <View>
-            <Text style={styles.greeting}>{getGreeting()}</Text>
-            <Text style={styles.userName}>
-              {profileData?.user?.name}
-            </Text>
-          </View>
-           </View>
-          <TouchableOpacity style={[styles.avatar,]} onPress={() => router.push("/(tabs)/profile")}>
-            {profileData?.user?.photo ? (
-              <Image
-                source={{ uri: profileData.user.photo }}
-                style={{ width: "100%", height: "100%" }}
-              />
-            ) : (
-              <User size={32} color="#fff" />
-            )}
-          </TouchableOpacity>
-        </View>
+     <LinearGradient
+  colors={[theme.colors.primary[500], theme.colors.primary[700]]}
+  style={styles.header}
+>
+  <View style={styles.headerContent}>
+    {/* Left & Center Section: Greeting and Balance */}
+    <View style={{ flex: 1, flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginRight: 12 }}>
+      
+      {/* Greeting and Name */}
+      <View>
+        <Text style={styles.greeting}>{getGreeting()}</Text>
+        <Text style={styles.userName}>
+          {profileData?.user?.name}
+        </Text>
+      </View>
 
-        <AnimatedCard style={styles.balanceCard}>
-          <View style={styles.balanceHeader}>
-            <View style={styles.balanceIconContainer}>
-              <Wallet size={22} color={theme.colors.primary[500]} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text style={styles.balanceLabel}>Available Balance</Text>
-              <Text style={styles.balanceSubLabel}>Wallet</Text>
-            </View>
-          </View>
+      {/* Balance Display - Now in the top row */}
+      <View style={{ alignItems: 'flex-end' }}>
+        <Text style={[styles.balanceLabel, { color: '#fff', fontSize: 12, opacity: 0.8 }]}>Balance</Text>
+        {balanceLoading ? (
+          <ShimmerPlaceholder style={{ width: 60, height: 20, borderRadius: 4 }} />
+        ) : (
+          <Text style={{ color: '#fff', fontSize: 18, fontWeight: '700' }}>
+            ₹{Number(balance ?? 0).toFixed(2)}
+          </Text>
+        )}
+      </View>
+    </View>
 
-          {balanceLoading ? (
-            <ShimmerPlaceholder style={styles.balanceShimmer} />
-          ) : (
-            <Text style={styles.balanceAmount}>₹{Number(balance ?? 0).toFixed(2)}</Text>
-          )}
+    {/* Right Section: Profile Avatar */}
+    <TouchableOpacity 
+      style={styles.avatar} 
+      onPress={() => router.push("/(tabs)/profile")}
+    >
+      {profileData?.user?.photo ? (
+        <Image
+          source={{ uri: profileData.user.photo }}
+          style={{ width: "100%", height: "100%", borderRadius: 20 }}
+        />
+      ) : (
+        <User size={32} color="#fff" />
+      )}
+    </TouchableOpacity>
+  </View>
 
-          <View style={styles.balanceFooter}>
-            <TouchableOpacity
-              style={styles.addFundButton}
-              onPress={() => {
-                router.push({
-                  pathname: "/send-payout/RequestPayout",
-                  params: {
-                    heading: "Move to Bank"
-                  }
-                });
-              }}
-              activeOpacity={0.7}
-
-            >
-              <Plus size={16} color="#FFF" />
-              <Text style={styles.addFundText}>Move to Bank</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={styles.addFundButton}
-              onPress={() => { router.push('/funds' as any) }}
-              activeOpacity={0.7}
-
-            >
-              <Plus size={16} color="#FFF" />
-              <Text style={styles.addFundText}>Add Funds</Text>
-            </TouchableOpacity>
-          </View>
-        </AnimatedCard>
-      </LinearGradient>
+  {/* Footer Buttons */}
+  <View style={[styles.balanceFooter, { marginTop: 15 }]}>
+    <TouchableOpacity
+      style={styles.addFundButton}
+      onPress={() => {
+        router.push({
+          pathname: "/send-payout/RequestPayout",
+          params: { heading: "Move to Bank" }
+        });
+      }}
+      activeOpacity={0.7}
+    >
+      <Plus size={16} color="#FFF" />
+      <Text style={styles.addFundText}>Move to Bank</Text>
+    </TouchableOpacity>
+    
+    <TouchableOpacity
+      style={styles.addFundButton}
+      onPress={() => { router.push('/funds' as any) }}
+      activeOpacity={0.7}
+    >
+      <Plus size={16} color="#FFF" />
+      <Text style={styles.addFundText}>Add Funds</Text>
+    </TouchableOpacity>
+  </View>
+</LinearGradient>
 
       <View style={styles.content}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Quick Services</Text>
-          <TouchableOpacity style={{ flex: 0.5, alignItems: 'flex-end' }} onPress={() => { router.push("/(tabs)/services") }}>
-            <Text style={styles.seeAllText}>See All</Text>
-          </TouchableOpacity>
+  <Text style={styles.sectionTitle}>Quick Services</Text>
+  <TouchableOpacity 
+    style={{ flex: 0.5, alignItems: 'flex-end' }} 
+    onPress={() => { router.push("/(tabs)/services") }}
+  >
+    <Text style={styles.seeAllText}>See All</Text>
+  </TouchableOpacity>
+</View>
+
+<View style={styles.servicesGrid}>
+  {servicesLoading ? (
+    /* Matches the layout of the loaded cards */
+    [...Array(4)].map((_, i) => (
+      <View key={i} style={styles.serviceCardContainer}>
+        <AnimatedCard style={styles.serviceCard}>
+          <ShimmerPlaceholder style={styles.shimmerIcon} />
+          <ShimmerPlaceholder style={styles.shimmerText} />
+          <ShimmerPlaceholder style={styles.shimmerCategory} />
+        </AnimatedCard>
+      </View>
+    ))
+  ) : services.length === 0 ? (
+    <EmptyState
+      icon={<Zap size={36} color={theme.colors.text.tertiary} />}
+      title="No services available"
+      subtitle="Please check back later"
+      styles={styles}
+    />
+  ) : (
+    services.map((service, index) => (
+      /* Uses the unified grid container instead of inline 47% */
+      <TouchableOpacity
+        key={service.id}
+        onPress={() => handleServicePress(service)}
+        style={styles.serviceCardContainer}
+        activeOpacity={0.7}
+      >
+        <AnimatedCard
+          delay={index * 100}
+          style={styles.serviceCard}
+        >
+          <View style={styles.serviceIconContainer}>
+            <Image
+              source={{ uri: service.image }}
+              style={{ width: 24, height: 24 }}
+              resizeMode="contain"
+            />
+          </View>
+
+          <Text style={styles.serviceName} numberOfLines={1}>
+            {service.name}
+          </Text>
+
+          <Text style={styles.serviceCategory} numberOfLines={1}>
+            {service.category}
+          </Text>
+        </AnimatedCard>
+      </TouchableOpacity>
+    ))
+  )}
+</View>
+
+        {/* ALL SERVICES SECTION */}
+        <View style={styles.sectionHeader}>
+          <Text style={styles.sectionTitle}>All Services</Text>
         </View>
 
-        <View style={styles.servicesGrid}>
-          {servicesLoading ? (
-            [...Array(5)].map((_, i) => (
-              <AnimatedCard key={i} style={styles.serviceCard}>
-                <ShimmerPlaceholder style={styles.shimmerIcon} />
-                <ShimmerPlaceholder style={styles.shimmerText} />
-                <ShimmerPlaceholder style={styles.shimmerCategory} />
-              </AnimatedCard>
-            ))
-          ) : services.length === 0 ? (
-            <EmptyState
-              icon={<Zap size={36} color={theme.colors.text.tertiary} />}
-              title="No services available"
-              subtitle="Please check back later"
-              styles={styles}
-            />
-          ) : services.map((service, index) => (
+        {servicesLoading ? (
+          <View style={styles.servicesGrid}>
+            {[...Array(4)].map((_, i) => (
+              <View key={i} style={styles.serviceCardContainer}>
+                <AnimatedCard style={styles.serviceCard}>
+                  <ShimmerPlaceholder style={styles.shimmerIcon} />
+                  <ShimmerPlaceholder style={styles.shimmerText} />
+                  <ShimmerPlaceholder style={styles.shimmerCategory} />
+                </AnimatedCard>
+              </View>
+            ))}
+          </View>
+        ) : !allServices || allServices.length === 0 ? (
+          <EmptyState
+            icon={<Zap size={36} color={theme.colors.text.tertiary} />}
+            title="No services available"
+            subtitle="Please check back later"
+            styles={styles}
+          />
+        ) : (
+          (() => {
+            // Group services by category
+            const grouped: Record<string, any[]> = {};
+            (allServices as any[]).forEach((service) => {
+              const cat = service.category || 'Other';
+              if (!grouped[cat]) grouped[cat] = [];
+              grouped[cat].push(service);
+            });
 
-            <TouchableOpacity
-              key={service.id}
-              onPress={() => handleServicePress(service)}
-              style={{ width: "47%", padding: 4 }}
-            >
-
-              <AnimatedCard
-                key={service.id}
-                delay={index * 100}
-              >
-                <View style={[styles.serviceIconContainer, {}]}>
-                  <Image
-                    source={{ uri: service.image }}
-                    style={{ width: 24, height: 24 }}
-                    resizeMode="contain"
-                  />
+            return Object.entries(grouped).map(([category, items]) => (
+              <View key={category} style={styles.categorySection}>
+                {/* Category Label */}
+                <View style={styles.categoryHeader}>
+                  <View style={styles.categoryPill}>
+                    <Text style={styles.categoryPillText}>{category.toUpperCase()}</Text>
+                  </View>
+                  <View style={styles.categoryLine} />
                 </View>
 
-                <Text style={styles.serviceName} numberOfLines={1}>
-                  {service.name}
-                </Text>
+                {/* 2-Column Wrapping Grid */}
+                <View style={styles.servicesGrid}>
+                  {items.map((service, index) => (
+                    <TouchableOpacity
+                      key={service.id}
+                      onPress={() => handleServicePress(service)}
+                      activeOpacity={0.7}
+                      style={styles.serviceCardContainer}
+                    >
+                      <AnimatedCard delay={index * 50} style={styles.serviceCard}>
+                        <View style={styles.serviceIconContainer}>
+                          <Image
+                            source={{ uri: service.image }}
+                            style={{ width: 28, height: 28 }}
+                            resizeMode="contain"
+                          />
+                        </View>
 
-                {/* CATEGORY */}
-                <Text style={styles.serviceCategory} numberOfLines={1}>
-                  {service.category}
-                </Text>
-              </AnimatedCard>
+                        <Text style={styles.serviceName} numberOfLines={1}>
+                          {service.name}
+                        </Text>
 
-            </TouchableOpacity>
+                        <Text style={styles.serviceCategory} numberOfLines={1}>
+                          {service.category || category}
+                        </Text>
+                      </AnimatedCard>
+                    </TouchableOpacity>
+                  ))}
+                </View>
+              </View>
+            ));
+          })()
+        )}
 
 
-
-          ))}
-        </View>
 
         <View style={styles.sectionHeader}>
           <Text style={styles.sectionTitle}>Recent Transactions</Text>
@@ -458,7 +583,7 @@ export default function HomeScreen() {
                   theme.colors.success[500];
 
             return (
-              <AnimatedCard onPress={()=>{handleOnPress(item)}} key={item.id || index} style={styles.transactionCard} delay={index * 100}>
+              <AnimatedCard onPress={() => { handleOnPress(item) }} key={item.id || index} style={styles.transactionCard} delay={index * 100}>
                 <View style={styles.cardRow}>
                   <View style={[styles.iconWrapper, {
                     backgroundColor: item.status === 'pending' ? theme.colors.warning[50]
@@ -498,64 +623,38 @@ export default function HomeScreen() {
 }
 
 const createStyles = (theme: AppTheme) => StyleSheet.create({
-  container: { flex: 1, backgroundColor: theme.colors.background.main },
-  header: { paddingTop: theme.spacing[12], paddingHorizontal: theme.spacing[6], paddingBottom: theme.spacing[8] },
-  headerContent: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing[6] },
-  greeting: { fontSize: theme.typography.fontSizes.lg, color: theme.colors.text.inverse, opacity: 0.9 },
-  userName: { fontSize: theme.typography.fontSizes['2xl'], fontWeight: theme.typography.fontWeights.bold, color: theme.colors.text.inverse, marginTop: theme.spacing[1] },
-  profileImage: { width: 48, height: 48, borderRadius: theme.borderRadius.full, backgroundColor: theme.colors.text.inverse, justifyContent: 'center', alignItems: 'center' },
-  profileInitial: { fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: theme.colors.primary[500] },
-  balanceCard: { backgroundColor: theme.colors.background.main },
-  balanceHeader: { flexDirection: 'row', alignItems: 'center', marginBottom: theme.spacing[2] },
-  balanceIconContainer: { width: 32, height: 32, borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.primary[50], justifyContent: 'center', alignItems: 'center', marginRight: theme.spacing[2] },
-  balanceLabel: { fontSize: theme.typography.fontSizes.sm, color: theme.colors.text.secondary },
-  balanceAmount: { fontSize: theme.typography.fontSizes['4xl'], fontWeight: theme.typography.fontWeights.bold, color: theme.colors.text.primary, marginBottom: theme.spacing[6] },
-  actions: { flexDirection: 'row', gap: theme.spacing[4] },
-  actionButton: { flex: 1, alignItems: 'center' },
-  actionIcon: { width: 48, height: 48, borderRadius: theme.borderRadius.full, justifyContent: 'center', alignItems: 'center', marginBottom: theme.spacing[2] },
-  actionText: { fontSize: theme.typography.fontSizes.sm, color: theme.colors.text.secondary, fontWeight: theme.typography.fontWeights.medium },
-  content: { paddingHorizontal: theme.spacing[6], paddingTop: theme.spacing[6] },
-  sectionHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: theme.spacing[4] },
-  sectionTitle: { fontSize: theme.typography.fontSizes.xl, fontWeight: theme.typography.fontWeights.bold, color: theme.colors.text.primary },
-  seeAllText: { fontSize: theme.typography.fontSizes.sm, color: theme.colors.primary[500], fontWeight: theme.typography.fontWeights.semibold },
-  servicesGrid: { flexDirection: 'row', flexWrap: 'wrap', gap: theme.spacing[4], marginBottom: theme.spacing[8] },
-  serviceCard: { width: '47%', padding: theme.spacing[4] },
-  serviceIconContainer: { width: 48, height: 48, borderRadius: theme.borderRadius.md, backgroundColor: theme.colors.primary[50], justifyContent: 'center', alignItems: 'center', marginBottom: theme.spacing[3] },
-  serviceName: { fontSize: theme.typography.fontSizes.md, fontWeight: theme.typography.fontWeights.semibold, color: theme.colors.text.primary, marginBottom: theme.spacing[1] },
-  servicePrice: { fontSize: theme.typography.fontSizes.sm, color: theme.colors.text.secondary },
-
-  // Transaction Styles
-  transactionCard: {
-    padding: theme.spacing[4],
-    marginBottom: theme.spacing[3],
-    backgroundColor: theme.colors.background.main,
-    borderRadius: theme.borderRadius.xl
+  // --- Global Layout ---
+  container: {
+    flex: 1,
+    backgroundColor: theme.colors.background.main
   },
-  cardRow: { flexDirection: 'row', alignItems: 'center' },
-  iconWrapper: { width: 40, height: 40, borderRadius: 20, justifyContent: 'center', alignItems: 'center', marginRight: 12 },
-  details: { flex: 1 },
-  txnId: { fontSize: 14, fontWeight: '600', color: theme.colors.text.primary },
-  txnDate: { fontSize: 11, color: theme.colors.text.secondary, marginTop: 2 },
-  statusBadge: { alignSelf: 'flex-start', paddingHorizontal: 8, paddingVertical: 2, borderRadius: 4, marginTop: 4 },
-  statusText: { fontSize: 9, fontWeight: '700' },
-  amount: { fontSize: 15, fontWeight: '700' },
-
-  // Shimmer Specific Styles
-  shimmerIcon: { width: 44, height: 44, borderRadius: 12, marginBottom: 8 },
-  shimmerText: { width: '70%', height: 12, borderRadius: 6 },
-  shimmerTitle: { width: '60%', height: 14 },
-  shimmerDate: { width: '40%', height: 10 },
-  shimmerAmount: { width: 60, height: 16 },
-  serviceCategory: {
-    fontSize: theme.typography.fontSizes.xs,
-    color: theme.colors.text.secondary,
-    marginTop: 2,
+  content: {
+    paddingHorizontal: theme.spacing[6],
+    paddingTop: theme.spacing[6]
   },
-  shimmerCategory: {
-    width: "50%",
-    height: 10,
-    borderRadius: 6,
-    marginTop: 4,
+
+  // --- Header Section ---
+  header: {
+    paddingTop: theme.spacing[12],
+    paddingHorizontal: theme.spacing[6],
+    paddingBottom: theme.spacing[8]
+  },
+  headerContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing[6]
+  },
+  greeting: {
+    fontSize: theme.typography.fontSizes.lg,
+    color: theme.colors.text.inverse,
+    opacity: 0.9
+  },
+  userName: {
+    fontSize: theme.typography.fontSizes['2xl'],
+    fontWeight: theme.typography.fontWeights.bold,
+    color: theme.colors.text.inverse,
+    marginTop: theme.spacing[1]
   },
   avatar: {
     width: 56,
@@ -566,47 +665,45 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     alignItems: "center",
     overflow: "hidden",
   },
-  userNameShimmer: {
-    width: 140,
-    height: 22,
-    borderRadius: 6,
-    marginTop: 4,
+
+  // --- Balance Card Section ---
+  balanceCard: {
+    backgroundColor: theme.colors.background.main
   },
-  balanceShimmer: {
-    width: 160,
-    height: 36,
-    borderRadius: 8,
-    marginVertical: 12,
+  balanceHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing[2]
+  },
+  balanceIconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.primary[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: theme.spacing[2]
+  },
+  balanceLabel: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.text.secondary
   },
   balanceSubLabel: {
     fontSize: theme.typography.fontSizes.xs,
     color: theme.colors.text.secondary,
     marginTop: 2,
   },
-  emptyState: {
-    width: "100%",
-    paddingVertical: 32,
-    alignItems: "center",
-    justifyContent: "center",
-  },
-
-  emptyTitle: {
-    marginTop: 12,
-    fontSize: theme.typography.fontSizes.md,
-    fontWeight: "600",
-    color: theme.colors.text.secondary,
-  },
-
-  emptySubtitle: {
-    marginTop: 4,
-    fontSize: theme.typography.fontSizes.sm,
-    color: theme.colors.text.tertiary,
+  balanceAmount: {
+    fontSize: theme.typography.fontSizes['4xl'],
+    fontWeight: theme.typography.fontWeights.bold,
+    color: theme.colors.text.primary,
+    marginBottom: theme.spacing[6]
   },
   balanceFooter: {
     flexDirection: 'row',
-    justifyContent: 'space-between', // Pushes Pill to left and Button to right
+    justifyContent: 'space-between',
     alignItems: 'center',
-    marginTop: 15,
+    // marginTop:16
   },
   addFundButton: {
     backgroundColor: theme.colors.primary[500],
@@ -615,7 +712,7 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     paddingVertical: 8,
     paddingHorizontal: 14,
     borderRadius: 20,
-    gap: 6, // Spacing between Plus icon and Text
+    gap: 6,
   },
   addFundText: {
     color: '#FFF',
@@ -623,16 +720,160 @@ const createStyles = (theme: AppTheme) => StyleSheet.create({
     fontWeight: '600',
   },
   balancePill: {
-    backgroundColor: theme.colors.primary[50] || '#F0F0F0',
+    backgroundColor: theme.colors.primary[50],
     paddingVertical: 4,
     paddingHorizontal: 10,
     borderRadius: 12,
   },
   balancePillText: {
     fontSize: 12,
-    color: theme.colors.primary[600] || '#666',
+    color: theme.colors.primary[600],
   },
 
+  // --- Section Headers ---
+  sectionHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: theme.spacing[4]
+  },
+  sectionTitle: {
+    fontSize: theme.typography.fontSizes.xl,
+    fontWeight: theme.typography.fontWeights.bold,
+    color: theme.colors.text.primary
+  },
+  seeAllText: {
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.primary[500],
+    fontWeight: theme.typography.fontWeights.semibold
+  },
 
+  // --- Services Grid (Updated for 4 items per row) ---
+  servicesGrid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    marginHorizontal: -4, // Reduced margin for tighter grid
+    marginBottom: theme.spacing[6],
+  },
+  serviceCardContainer: {
+    width: '25%', // 4 items per row
+    paddingHorizontal: 4, // Tighter horizontal spacing
+    paddingVertical: 6,
+  },
+  serviceCard: {
+    padding: theme.spacing[2], // Reduced padding inside card
+    backgroundColor: theme.colors.background.main,
+    borderRadius: theme.borderRadius.lg,
+    minHeight: 100, // Scaled down height
+    alignItems: 'center', // Center content for the 4-column look
+    justifyContent: 'center',
+  },
+  serviceIconContainer: {
+    width: 36, // Smaller icon container
+    height: 36,
+    borderRadius: theme.borderRadius.md,
+    backgroundColor: theme.colors.primary[50],
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: theme.spacing[2],
+  },
+  serviceName: {
+    fontSize: 10, // Smaller font to prevent overlapping
+    fontWeight: '600',
+    color: theme.colors.text.primary,
+    textAlign: 'center',
+    lineHeight: 12,
+  },
+  serviceCategory: {
+    fontSize: 8, // Very small category text or hide it
+    color: theme.colors.text.secondary,
+    textAlign: 'center',
+    marginTop: 2,
+  },
 
+  // --- Category Labels (Specific to All Services) ---
+  categorySection: {
+    marginBottom: theme.spacing[4],
+  },
+  categoryHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: theme.spacing[3],
+    gap: theme.spacing[2],
+  },
+  categoryPill: {
+    backgroundColor: theme.colors.primary[50],
+    paddingHorizontal: 10,
+    paddingVertical: 4,
+    borderRadius: theme.borderRadius.sm,
+    borderWidth: 1,
+    borderColor: theme.colors.primary[100],
+  },
+  categoryPillText: {
+    fontSize: 10,
+    fontWeight: '800',
+    color: theme.colors.primary[600],
+    letterSpacing: 0.5,
+  },
+  categoryLine: {
+    flex: 1,
+    height: 1,
+    backgroundColor: theme.colors.primary[50],
+  },
+
+  // --- Transaction List Styles ---
+  transactionCard: {
+    padding: theme.spacing[4],
+    marginBottom: theme.spacing[3],
+    backgroundColor: theme.colors.background.main,
+    borderRadius: theme.borderRadius.xl
+  },
+  cardRow: { flexDirection: 'row', alignItems: 'center' },
+  iconWrapper: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 12
+  },
+  details: { flex: 1 },
+  txnId: { fontSize: 14, fontWeight: '600', color: theme.colors.text.primary },
+  txnDate: { fontSize: 11, color: theme.colors.text.secondary, marginTop: 2 },
+  statusBadge: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: 8,
+    paddingVertical: 2,
+    borderRadius: 4,
+    marginTop: 4
+  },
+  statusText: { fontSize: 9, fontWeight: '700' },
+  amount: { fontSize: 15, fontWeight: '700' },
+
+  // --- Shimmer & Feedback States ---
+  shimmerIcon: { width: 44, height: 44, borderRadius: 12, marginBottom: 8 },
+  shimmerText: { width: '70%', height: 12, borderRadius: 6 },
+  shimmerTitle: { width: '60%', height: 14 },
+  shimmerDate: { width: '40%', height: 10 },
+  shimmerAmount: { width: 60, height: 16 },
+  shimmerCategory: { width: "50%", height: 10, borderRadius: 6, marginTop: 4 },
+  balanceShimmer: { width: 160, height: 36, borderRadius: 8, marginVertical: 12 },
+
+  emptyState: {
+    width: "100%",
+    paddingVertical: 32,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  emptyTitle: {
+    marginTop: 12,
+    fontSize: theme.typography.fontSizes.md,
+    fontWeight: "600",
+    color: theme.colors.text.secondary,
+  },
+  emptySubtitle: {
+    marginTop: 4,
+    fontSize: theme.typography.fontSizes.sm,
+    color: theme.colors.text.tertiary,
+  },
 });

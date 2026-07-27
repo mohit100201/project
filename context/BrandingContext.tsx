@@ -21,7 +21,8 @@ const BrandingContext = createContext<BrandingState>({
 
 export const useBranding = () => useContext(BrandingContext);
 
-const TENANTS_API = 'https://api.pinepe.in/api/whitelabel/theme';
+// const TENANTS_API = 'https://api.pinepe.in/api/whitelabel/theme';
+const TENANTS_API = 'https://backendapi.saypal.in/api/whitelabel/theme';
 
 export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [logoUrl, setLogoUrl] = useState<string | null>(null);
@@ -48,6 +49,8 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         return 'nkpay.in';
       case 'onepe':
         return 'onepe.co.in';
+      case 'bcinfotech':
+        return 'bcinfotech.in';
       default:
         // Default fallback
         return 'app.pinepe.in';
@@ -83,6 +86,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
         });
 
         const json = await response.json();
+        console.log("data",json)
 
         if (json.success && json.data) {
           // The API returns { theme: {...}, plans: [...] } in json.data
@@ -96,6 +100,7 @@ export const BrandingProvider: React.FC<{ children: React.ReactNode }> = ({ chil
 
           if (finalLogo) {
             setLogoUrl(finalLogo);
+            console.log("logo",finalLogo);
             // Optimization: Prefetch image into cache
             try {
               await Image.prefetch(finalLogo);

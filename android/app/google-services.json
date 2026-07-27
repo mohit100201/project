@@ -1,0 +1,67 @@
+{
+  "project_info": {
+    "project_number": "151051114333",
+    "project_id": "pinepe-81c46",
+    "storage_bucket": "pinepe-81c46.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151051114333:android:f6bc7e07464e9871b27ab4",
+        "android_client_info": {
+          "package_name": "in.pinepe.pinepe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIoklFlBg5uMoNwK6d9soH4adx3JVf9mE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151051114333:android:f6bc7e07464e9871b27ab4",
+        "android_client_info": {
+          "package_name": "in.pinepe.pinepe.pinepe"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIoklFlBg5uMoNwK6d9soH4adx3JVf9mE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:151051114333:android:f6bc7e07464e9871b27ab4",
+        "android_client_info": {
+          "package_name": "in.pinepe.pinepe.bcinfotech"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCIoklFlBg5uMoNwK6d9soH4adx3JVf9mE"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

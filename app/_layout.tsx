@@ -7,6 +7,8 @@ import { BrandingProvider } from '@/context/BrandingContext';
 import { ThemeProvider } from "@/context/ThemeProvider";
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import * as SplashScreen from "expo-splash-screen";
+import { useEffect } from "react";
+import { initNotifications, listenNotifications } from "@/services/notificationService";
 
 SplashScreen.preventAutoHideAsync();
 
@@ -36,6 +38,22 @@ export const unstable_settings = {
 // MUST BE DEFAULT EXPORT
 export default function RootLayout() {
   useFrameworkReady();
+
+   useEffect(() => {
+    // ✅ Initialize notifications
+    const setup = async () => {
+      const token = await initNotifications();
+      console.log("🔥 FCM TOKEN:", token);
+    };
+
+    setup();
+
+    // ✅ Listen for foreground notifications
+    const unsubscribe = listenNotifications();
+
+    return () => unsubscribe();
+  }, []);
+
 
   return (
       <GestureHandlerRootView style={{ flex: 1 }}>
